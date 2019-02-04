@@ -1,22 +1,22 @@
 import { Schema } from 'mongoose';
-import { RoundSchema } from './RoundSchema';
+import RoundSchema from './RoundSchema';
 import { TeamSchema } from './TeamSchema';
 
 // TODO: Add validation https://mongoosejs.com/docs/validation.html
-export const QuizSchema = new Schema({
+export default new Schema({
   name: {
     type: String,
     min: 1,
-    required: true,
+    required: true
   },
   password: {
     default: '',
-    type: String,
+    type: String
   },
   open: {
     default: true,
     type: Boolean,
-    required: true,
+    required: true
   },
   teams: {
     default: [],
@@ -32,24 +32,17 @@ export const QuizSchema = new Schema({
       //   },
       // },
       // { type: Schema.Types.ObjectId, ref: 'Team' },
-      TeamSchema,
+      TeamSchema
     ],
-    maxItems: 8, // TODO: Is not a valid validator, only checks string length.
+    maxItems: 8 // TODO: Is not a valid validator, only checks string length.
   },
   rounds: {
     default: [],
     type: [RoundSchema],
-    required: true,
-  },
-  currentRound: {
-    type: RoundSchema,
-    default: RoundSchema,
-    required: true,
-  },
+    required: true
+  }
+  // questions: {
+  //   type: [RoundQuestionsSchema],
+  //   default: [],
+  // },
 });
-
-// teams: {
-//   default: [],
-//   type: [{ type: Schema.Types.ObjectId, ref: 'Team' }],
-//   maxItems: 8, // TODO: Is not a valid validator, only checks string length.
-// },

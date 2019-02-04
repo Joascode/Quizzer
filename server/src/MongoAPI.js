@@ -1,21 +1,14 @@
+import { mongoose, model } from 'mongoose';
 import { QuizSchema } from './schemas/QuizSchema';
 import { QuestionSchema } from './schemas/QuestionSchema';
 import { CategorySchema } from './schemas/CategorySchema';
-import { model } from 'mongoose';
-import { RoundSchema } from './schemas/RoundSchema';
-import { TeamSchema } from './schemas/TeamSchema';
-import { AnswerSchema } from './schemas/AnswerSchema';
 
-export const MongoAPI = (url = '') => {
-  const mongoose = require('mongoose');
+export default () => {
   mongoose.connect('mongodb://localhost/quizzer');
-  const db = mongoose.connection;
 
   const Quiz = model('Quiz', QuizSchema);
   const Category = model('Category', CategorySchema);
   const Question = model('Question', QuestionSchema);
-  // const Team = model('Team', TeamSchema);
-  // const Answer = model('Answer', AnswerSchema);
 
   return {
     deleteTeam: async (quizId, teamId) => {
@@ -24,13 +17,14 @@ export const MongoAPI = (url = '') => {
         const newQuiz = await Quiz.findOneAndUpdate(
           query,
           {
-            $pull: { teams: { _id: [teamId] } },
+            $pull: { teams: { _id: [teamId] } }
           },
-          { new: true },
+          { new: true }
         );
         return newQuiz;
       } catch (err) {
         console.log(err);
+        throw err;
       }
     },
 
@@ -40,7 +34,7 @@ export const MongoAPI = (url = '') => {
       try {
         const query = {
           _id: quizId,
-          'teams.name': { $ne: team.name },
+          'teams.name': { $ne: team.name }
         };
         // const quizTeam = await Team.create({
         //   name: team.name,
@@ -50,9 +44,9 @@ export const MongoAPI = (url = '') => {
         const quiz = await Quiz.findOneAndUpdate(
           query,
           {
-            $push: { teams: team },
+            $push: { teams: team }
           },
-          { runValidators: true, new: true },
+          { runValidators: true, new: true }
         );
 
         console.log('New quiz after joining of team');
@@ -72,6 +66,7 @@ export const MongoAPI = (url = '') => {
         return quiz.teams;
       } catch (err) {
         console.log(err);
+        throw err;
       }
     },
 
@@ -80,17 +75,18 @@ export const MongoAPI = (url = '') => {
       try {
         const quiz = await Quiz.findOne(
           {
-            _id: quizId,
+            _id: quizId
           },
-          { teams: [teamId] },
+          { teams: [teamId] }
         );
         console.log(quiz);
-        const team = quiz.teams.find(findTeam => '' + findTeam._id === teamId);
-        console.log('Found team:');
+        const team = quiz.teams.find(findTeam => `${findTeam._id}` === teamId);
+        // console.log('Found team:');
         console.log(team);
         return team;
       } catch (err) {
         console.log(err);
+        throw err;
       }
     },
 
@@ -100,6 +96,7 @@ export const MongoAPI = (url = '') => {
         return newQuiz;
       } catch (err) {
         console.log(err);
+        throw err;
       }
     },
 
@@ -109,6 +106,7 @@ export const MongoAPI = (url = '') => {
         return quiz;
       } catch (err) {
         console.log(err);
+        throw err;
       }
     },
 
@@ -127,8 +125,8 @@ export const MongoAPI = (url = '') => {
         await Quiz.findOneAndUpdate(
           { _id: quizId, open: true },
           {
-            $set: { open: false },
-          },
+            $set: { open: false }
+          }
         );
         return;
       } catch (err) {
@@ -152,7 +150,7 @@ export const MongoAPI = (url = '') => {
       try {
         console.log('Getting random questions');
         const rowCount = await Question.count({
-          category: { $in: categoryIds },
+          category: { $in: categoryIds }
         });
         console.log(`Row count of questions: ${rowCount}`);
         const maxRandomNumber = rowCount - 20;
@@ -164,7 +162,7 @@ export const MongoAPI = (url = '') => {
           .skip(randomNumber)
           .limit(20)
           .populate('category');
-        console.log(`Found questions:`);
+        console.log('Found questions:');
         console.log(questions);
         return questions;
       } catch (err) {
@@ -175,9 +173,7 @@ export const MongoAPI = (url = '') => {
 
     getQuestion: async questionId => {
       try {
-        const question = await Question.findById(questionId).populate(
-          'category',
-        );
+        const question = await Question.findById(questionId).populate('category');
         return question;
       } catch (err) {
         console.log(err.message);
@@ -185,18 +181,20 @@ export const MongoAPI = (url = '') => {
       }
     },
 
-    setCurrentQuestion: async (quizId, questionId) => {
+    setCurrentQuestion: async (quizId, roundId, questionId) => {
       try {
         const quiz = await Quiz.findOneAndUpdate(
-          { _id: quizId },
+          { _id: quizId, 'rounds._id': roundId },
           {
-            'currentRound.currentQuestion': {
-              question: questionId,
-              answers: [],
-            },
-          },
+            $push: {
+              questions: {
+                question: questionId,
+                answers: []
+              }
+            }
+          }
         );
-        return quiz.currentRound;
+        return quiz;
       } catch (err) {
         console.log(err.message);
         throw err;
@@ -204,33 +202,37 @@ export const MongoAPI = (url = '') => {
     },
 
     // TODO: Finish this function.
-    saveAnswer: async (quizId, teamId, answer) => {
+    saveAnswer: async (quizId, roundId, questionId, teamId, answer) => {
       try {
         const quiz = await Quiz.findOneAndUpdate(
           {
             _id: quizId,
-            'currentRound.currentQuestion.answers.teamId': { $ne: teamId },
+            'rounds._id': roundId,
+            'rounds.questions._id': questionId,
+            'rounds.questions.answers.teamId': { $ne: teamId }
           },
           {
             $addToSet: {
-              'currentRound.currentQuestion.answers': {
-                teamId: teamId,
-                answer: answer,
-              },
-            },
+              'rounds.$[round].questions.$[question].answers': {
+                teamId,
+                answer
+              }
+            }
           },
           {
-            fields: {
-              'currentRound.currentQuestion.answers': 1,
-            },
-            new: true,
+            arrayFilters: [{ round: roundId, question: questionId, team: teamId }]
           },
+          {
+            'rounds.$[round].questions.$[question].answers.$': 1,
+            new: true
+          }
         );
         console.log('Answer saved');
         console.log(quiz);
-        const teamAnswer = quiz.currentRound.currentQuestion.answers.find(
-          answer => answer.teamId.equals(teamId),
-        );
+        // const teamAnswer = quiz.currentRound.currentQuestion.answers.find(
+        //   answer => answer.teamId.equals(teamId),
+        // );
+        // TODO: Does not work at the moment.
         if (teamAnswer) {
           return teamAnswer;
           // return {
@@ -245,20 +247,20 @@ export const MongoAPI = (url = '') => {
       }
     },
 
-    updateAnswer: async (quizId, teamId, answer) => {
+    updateAnswer: async (quizId, roundId, questionId, teamId, answer) => {
       try {
         const quiz = await Quiz.findOneAndUpdate(
           {
             _id: quizId,
-            'currentRound.currentQuestion.answers.teamId': teamId,
+            'rounds.questions.$[question].answers.teamId': teamId
           },
           {
             $inc: {
-              'currentRound.currentQuestion.answers.$._version': 1,
+              'rounds.$[round].questions.$[question].answers.$[team]._version': 1
             },
             $set: {
-              'currentRound.currentQuestion.answers.$.answer': answer,
-            },
+              'rounds.$[round].questions.$[question].answers.$[team].answer': answer
+            }
             // $push: {
             //   'currentRound.currentQuestion.answers.$.answers': {
             //     $each: [{ answer: answer }],
@@ -267,18 +269,20 @@ export const MongoAPI = (url = '') => {
             // },
           },
           {
-            fields: {
-              'currentRound.currentQuestion.answers': 1,
-            },
-            new: true,
+            arrayFilters: [{ round: roundId, question: questionId, team: teamId }]
           },
+          {
+            'rounds.$[round].questions.$[question].answers.$': 1,
+            new: true
+          }
         );
 
         console.log('Answer updated.');
         console.log(quiz);
-        const teamAnswer = quiz.currentRound.currentQuestion.answers.find(
-          answer => answer.teamId.equals(teamId),
-        );
+        // const teamAnswer = quiz.currentRound.currentQuestion.answers.find(
+        //   answer => answer.teamId.equals(teamId),
+        // );
+        // TODO: Does not work at the moment.
         if (teamAnswer) {
           return teamAnswer;
           // return {
@@ -293,21 +297,28 @@ export const MongoAPI = (url = '') => {
       }
     },
 
-    getAnswer: async (quizId, teamId) => {
+    getAnswer: async (quizId, roundId, questionId, teamId) => {
       try {
         const quiz = await Quiz.findOne(
           {
             _id: quizId,
-            'currentRound.currentQuestion.answers.teamId': teamId,
+            'rounds._id': roundId,
+            'rounds.questions._id': questionId,
+            'rounds.questions.answers.teamId': teamId
           },
           {
-            'currentRound.currentQuestion.answers': 1,
+            arrayFilters: [{ round: roundId, question: questionId, team: teamId }]
           },
+          {
+            'rounds.$[round].questions.$[question].answers.$[team]': 1,
+            new: true
+          }
         );
 
-        const teamAnswer = quiz.currentRound.currentQuestion.answers.find(
-          answer => answer.teamId.equals(teamId),
-        );
+        // const teamAnswer = quiz.currentRound.currentQuestion.answers.find(
+        //   answer => answer.teamId.equals(teamId),
+        // );
+        // TODO: Does not work at the moment.
         if (teamAnswer) {
           return teamAnswer;
           // return {
@@ -331,17 +342,19 @@ export const MongoAPI = (url = '') => {
       }
     },
 
-    setSelectedCategories: async (quizId, categoryIds) => {
+    setSelectedCategories: async (quizId, roundId, categoryIds) => {
       try {
         const quiz = await Quiz.findOneAndUpdate(
-          { _id: quizId },
+          { _id: quizId, 'rounds._id': roundId },
           {
             $push: {
-              'currentRound.selectedCategories': categoryIds,
-            },
+              'rounds.$.selectedCategories': categoryIds
+            }
           },
+          { 'rounds.$': 1 }
         );
-        return quiz.currentRound;
+        // TODO: Returns wrong item.
+        return quiz;
       } catch (err) {
         throw err;
       }
@@ -354,23 +367,23 @@ export const MongoAPI = (url = '') => {
       } catch (err) {
         throw new Error(err);
       }
-    },
+    }
 
-    startNextRound: async quizId => {
-      try {
-        const quiz = await Quiz.findByIdAndUpdate(
-          { _id: quizId },
-          {
-            $push: { rounds: currentRound },
-            currentRound: RoundSchema.create({
-              number: currentRound.number + 1,
-            }),
-          },
-        );
-        return quiz.currentRound;
-      } catch (err) {
-        throw err;
-      }
-    },
+    // startNextRound: async quizId => {
+    //   try {
+    //     const quiz = await Quiz.findByIdAndUpdate(
+    //       { _id: quizId },
+    //       {
+    //         $push: { rounds: currentRound },
+    //         currentRound: RoundSchema.create({
+    //           number: currentRound.number + 1,
+    //         }),
+    //       },
+    //     );
+    //     return quiz.currentRound;
+    //   } catch (err) {
+    //     throw err;
+    //   }
+    // },
   };
 };
