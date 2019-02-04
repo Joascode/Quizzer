@@ -1,4 +1,8 @@
 import React, { useState, FunctionComponent, FormEvent } from 'react';
+import Container from 'reactstrap/lib/Container';
+import Row from 'reactstrap/lib/Row';
+import Col from 'reactstrap/lib/Col';
+import { Button } from 'reactstrap';
 
 interface CreateQuizState {
   name: string;
@@ -40,25 +44,34 @@ export const CreateQuiz: FunctionComponent<CreateQuizProps> = props => {
   };
 
   return (
-    <div>
+    <Container>
+      <Row>
+        <Col>
       <h1>Let's create a Quiz!</h1>
+      </Col>
+      <Col>
       <form onSubmit={createTeam}>
+        <Container>
+          <Row>
+            <Col>
         <label>
-          Quiz name:
+          Quiz name
           <input
             name="name"
             value={quizInfo.name}
             onChange={handleInputChange}
           />
         </label>
+        </Col>
         <label>
-          Number of Questions per round:
+          Number of Questions per round
           <input
             name="maxNQuestions"
             value={quizInfo.maxNQuestions}
             onChange={handleInputChange}
           />
         </label>
+        <Col>
         <label>
           Password?
           <input
@@ -68,19 +81,24 @@ export const CreateQuiz: FunctionComponent<CreateQuizProps> = props => {
             onChange={handleInputChange}
           />
         </label>
-
+        </Col>
         {quizInfo.addPassword ? (
           <div>
             <label>Enter password</label>
             <input
               name="password"
+              type='password'
               value={quizInfo.password}
               onChange={handleInputChange}
             />
           </div>
         ) : null}
-        <input type="submit" value="Create" />
+        <Button color='primary' block>Create</Button>
+        </Row>
+        </Container>
       </form>
-    </div>
+      </Col>
+      </Row>
+    </Container>
   );
 };
