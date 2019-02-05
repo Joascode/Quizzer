@@ -1,7 +1,7 @@
 import { Schema } from 'mongoose';
 
-export const QuestionSchema = new Schema({
+export default new Schema({
   question: String,
   answer: String,
-  category: { type: Schema.Types.ObjectId, ref: 'Category' },
+  category: { type: Schema.Types.ObjectId, ref: 'Category' }
 });

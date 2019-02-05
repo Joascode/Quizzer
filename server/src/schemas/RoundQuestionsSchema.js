@@ -1,8 +1,8 @@
 import { Schema } from 'mongoose';
-import { AnswerSchema } from './AnswerSchema';
 
-export const RoundQuestionsSchema = new Schema({
+export default new Schema({
   questionId: Schema.Types.ObjectId,
-  roundNr: Schema.Types.ObjectId,
-  answers: [AnswerSchema],
+  teamId: Schema.Types.ObjectId,
+  answer: String,
+  _version: Number
 });

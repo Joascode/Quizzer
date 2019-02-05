@@ -62,9 +62,9 @@ app.get('/categories', async (req, res) => {
   }
 });
 
-app.post('/quiz/:id/categories', async (req, res) => {
+app.post('/quiz/:id/round/:roundNr/categories', async (req, res) => {
   try {
-    const round = await api.setSelectedCategories(req.params.id, req.body.ids);
+    const round = await api.startRound(req.params.id, req.params.roundNr, req.body.ids);
     console.log(round);
     res.json(round);
   } catch (err) {
@@ -232,11 +232,11 @@ app.get('/question/:id', async (req, res) => {
 });
 
 // TODO: Fix function calls!
-app.post('/quiz/:quizId/round/:roundId/question/:id', async (req, res) => {
+app.post('/quiz/:quizId/round/:roundNr/question/:id', async (req, res) => {
   try {
     const round = await api.setCurrentQuestion(
       req.params.quizId,
-      req.params.roundId,
+      req.params.roundNr,
       req.params.id
     );
     res.json(round);
@@ -246,9 +246,9 @@ app.post('/quiz/:quizId/round/:roundId/question/:id', async (req, res) => {
 });
 
 // TODO: Fix function calls!
-app.post('/quiz/:quizId/round/:roundId/question/close', async (req, res) => {
+app.post('/quiz/:quizId/round/:roundNr/question/close', async (req, res) => {
   try {
-    const quiz = await api.closeQuestion(req.params.quizId, req.params.roundId, req.body);
+    const quiz = await api.closeQuestion(req.params.quizId, req.params.roundNr, req.body);
     res.status(200).json(quiz);
   } catch (err) {
     handleError(res, err.message, 404);
@@ -256,26 +256,18 @@ app.post('/quiz/:quizId/round/:roundId/question/close', async (req, res) => {
 });
 
 // TODO: Fix function calls!
-app.get(
-  '/quiz/:quizId/round/:roundId/question/:questionId/team/:teamId/answer',
-  async (req, res) => {
-    try {
-      const answer = await api.getAnswer(
-        req.params.quizId,
-        req.params.roundId,
-        req.params.questionId,
-        req.params.teamId
-      );
-      res.status(200).json(answer);
-    } catch (err) {
-      handleError(res, err.message, 404);
-    }
+app.get('/answer/:id', async (req, res) => {
+  try {
+    const answer = await api.getAnswer(req.params.id);
+    res.status(200).json(answer);
+  } catch (err) {
+    handleError(res, err.message, 404);
   }
-);
+});
 
 // TODO: Fix function calls!
 app.post(
-  '/quiz/:quizId/round/:roundId/question/:questionId/team/:teamId/answer',
+  '/quiz/:quizId/round/:roundNr/question/:questionId/team/:teamId/answer',
   async (req, res) => {
     try {
       const answer = await api.saveAnswer(
@@ -293,23 +285,14 @@ app.post(
 );
 
 // TODO: Fix function calls!
-app.post(
-  '/quiz/:quizId/round/:roundId/question/:questionId/team/:teamId/answer/update',
-  async (req, res) => {
-    try {
-      const answer = await api.updateAnswer(
-        req.params.quizId,
-        req.params.roundId,
-        req.params.questionId,
-        req.params.teamId,
-        req.body.answer
-      );
-      res.status(200).json(answer);
-    } catch (err) {
-      handleError(res, err.message, 404);
-    }
+app.post('/answer/:id', async (req, res) => {
+  try {
+    const answer = await api.updateAnswer(req.params.id, req.body.answer);
+    res.status(200).json(answer);
+  } catch (err) {
+    handleError(res, err.message, 404);
   }
-);
+});
 
 app.post('/quiz/:quizId/nextRound', async (req, res) => {
   try {

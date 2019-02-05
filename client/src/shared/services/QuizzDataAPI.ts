@@ -10,7 +10,7 @@ export class QuizzDataAPI {
   private static serverUrl = 'http://localhost:8080';
 
   static async getQuizs(): Promise<any> {
-    return fetch(`${this.serverUrl}/quiz/open`).then(data => {
+    return fetch(`${this.serverUrl}/quiz/open`).then((data) => {
       return data.json();
     });
   }
@@ -33,20 +33,20 @@ export class QuizzDataAPI {
       method: 'POST',
       body: JSON.stringify({ closeQuiz: true }),
       headers: { 'Content-Type': 'application/json' },
-    }).then(data => {
+    }).then((data) => {
       return data.json();
     });
   }
 
   static async getTeams(quizId: number | string): Promise<any> {
-    return fetch(`${this.serverUrl}/quiz/${quizId}/teams`).then(data =>
+    return fetch(`${this.serverUrl}/quiz/${quizId}/teams`).then((data) =>
       data.json(),
     );
   }
 
   static async getTeam(quizId: string, teamId: string): Promise<any> {
     return fetch(`${this.serverUrl}/quiz/${quizId}/team/${teamId}`).then(
-      data => {
+      (data) => {
         console.log('GetTeam data');
         console.log(data);
         return data.json();
@@ -60,7 +60,7 @@ export class QuizzDataAPI {
       headers: { 'Content-Type': 'application/json' },
     })
       .then(() => {})
-      .catch(err => {
+      .catch((err) => {
         throw new Error(err);
       });
   }
@@ -73,14 +73,16 @@ export class QuizzDataAPI {
       .then(() => {
         console.log('Succesfully closed the quiz for others to join.');
       })
-      .catch(err => {
+      .catch((err) => {
         console.log(err);
         throw new Error(err);
       });
   }
 
   static async getQuizInfo(quizId: number | string) {
-    return fetch(`${this.serverUrl}/quiz/${quizId}`).then(data => data.json());
+    return fetch(`${this.serverUrl}/quiz/${quizId}`).then((data) =>
+      data.json(),
+    );
   }
 
   // static async getQuestion(questionId: number | string) {
@@ -119,7 +121,7 @@ export class QuizzDataAPI {
       method: 'POST',
       body: JSON.stringify({ pass: pass }),
       headers: { 'Content-Type': 'application/json' },
-    }).then(data => {
+    }).then((data) => {
       if (data.status === 200) {
         return true;
       }
@@ -130,7 +132,7 @@ export class QuizzDataAPI {
   static async getCategories(): Promise<any> {
     return fetch(`${this.serverUrl}/categories`, {
       method: 'GET',
-    }).then(data => {
+    }).then((data) => {
       console.log(data);
       if (data.status === 200) {
         return data.json();
@@ -139,15 +141,19 @@ export class QuizzDataAPI {
     });
   }
 
-  static async saveSelectedCategories(
+  static async startRound(
     quizId: string,
+    roundNr: number,
     categoriesIds: string[],
   ): Promise<any> {
-    return fetch(`${this.serverUrl}/quiz/${quizId}/categories`, {
-      method: 'POST',
-      body: JSON.stringify({ ids: categoriesIds }),
-      headers: { 'Content-Type': 'application/json' },
-    }).then(data => {
+    return fetch(
+      `${this.serverUrl}/quiz/${quizId}/round/${roundNr}/categories`,
+      {
+        method: 'POST',
+        body: JSON.stringify({ ids: categoriesIds }),
+        headers: { 'Content-Type': 'application/json' },
+      },
+    ).then((data) => {
       console.log(data);
       if (data.status === 200) {
         return data.json();
@@ -159,14 +165,14 @@ export class QuizzDataAPI {
   static async getRandomQuestions(
     availableCategories: CategoryModel[],
   ): Promise<any> {
-    const categoryIds = availableCategories.map(category => category._id);
+    const categoryIds = availableCategories.map((category) => category._id);
     let idUrlString = '';
-    categoryIds.forEach(id => {
+    categoryIds.forEach((id) => {
       idUrlString += `/${id}`;
     });
     return fetch(`${this.serverUrl}/questions/random${idUrlString}`, {
       method: 'GET',
-    }).then(data => {
+    }).then((data) => {
       console.log(data);
       if (data.status === 200) {
         return data.json();
@@ -178,7 +184,7 @@ export class QuizzDataAPI {
   static async getQuestion(questionId: string): Promise<any> {
     return fetch(`${this.serverUrl}/question/${questionId}`, {
       method: 'GET',
-    }).then(data => {
+    }).then((data) => {
       console.log(data);
       if (data.status === 200) {
         return data.json();
@@ -189,12 +195,18 @@ export class QuizzDataAPI {
 
   static async saveSelectedQuestion(
     quizId: string,
+    roundNr: number,
     questionId: string,
   ): Promise<any> {
-    return fetch(`${this.serverUrl}/quiz/${quizId}/question/${questionId}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-    }).then(data => {
+    return fetch(
+      `${
+        this.serverUrl
+      }/quiz/${quizId}/round/${roundNr}/question/${questionId}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      },
+    ).then((data) => {
       console.log(data);
       if (data.status === 200) {
         return data.json();
@@ -214,7 +226,7 @@ export class QuizzDataAPI {
         answer: answer,
       }),
       headers: { 'Content-Type': 'application/json' },
-    }).then(data => {
+    }).then((data) => {
       console.log(data);
       if (data.status === 200) {
         return data.json();
@@ -237,7 +249,7 @@ export class QuizzDataAPI {
         }),
         headers: { 'Content-Type': 'application/json' },
       },
-    ).then(data => {
+    ).then((data) => {
       console.log(data);
       if (data.status === 200) {
         return data.json();
@@ -249,7 +261,7 @@ export class QuizzDataAPI {
   static async getAnswer(quizId: string, teamId: string): Promise<any> {
     return fetch(`${this.serverUrl}/quiz/${quizId}/team/${teamId}/answer`, {
       method: 'GET',
-    }).then(data => {
+    }).then((data) => {
       console.log(data);
       if (data.status === 200) {
         return data.json();

@@ -20,29 +20,11 @@ export default new Schema({
   },
   teams: {
     default: [],
-    type: [
-      // {
-      //   name: {
-      //     type: String,
-      //     required: true,
-      //     minLength: 1,
-      //   },
-      //   members: {
-      //     type: [String],
-      //   },
-      // },
-      // { type: Schema.Types.ObjectId, ref: 'Team' },
-      TeamSchema
-    ],
-    maxItems: 8 // TODO: Is not a valid validator, only checks string length.
+    type: [TeamSchema]
   },
   rounds: {
     default: [],
     type: [RoundSchema],
     required: true
   }
-  // questions: {
-  //   type: [RoundQuestionsSchema],
-  //   default: [],
-  // },
 });

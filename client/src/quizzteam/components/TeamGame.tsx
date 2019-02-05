@@ -75,7 +75,7 @@ function wsReducer(state: ReducerModel, action: ReducerActions) {
         quiz: {
           ...state.quiz,
           name: action.payload.quiz.name,
-          round: action.payload.quiz.currentRound.number,
+          round: state.quiz.round,
           teams: action.payload.quiz.teams,
           _id: action.payload.quiz._id,
         },
@@ -99,7 +99,7 @@ function wsReducer(state: ReducerModel, action: ReducerActions) {
     case ReducerActionTypes.teamJoined: {
       const quiz = { ...state.quiz };
       const exists = quiz.teams.find(
-        teamFind => teamFind.name === action.payload.team.name,
+        (teamFind) => teamFind.name === action.payload.team.name,
       );
       if (!exists) quiz.teams.push(action.payload.team);
       return {
@@ -119,7 +119,9 @@ function wsReducer(state: ReducerModel, action: ReducerActions) {
           ...state,
           quiz: {
             ...state.quiz,
-            teams: state.quiz.teams.filter(team => team._id !== action.payload),
+            teams: state.quiz.teams.filter(
+              (team) => team._id !== action.payload,
+            ),
           },
         };
       }
@@ -163,7 +165,7 @@ function wsReducer(state: ReducerModel, action: ReducerActions) {
   }
 }
 
-export const TeamGame: React.FunctionComponent<GameProps> = props => {
+export const TeamGame: React.FunctionComponent<GameProps> = (props) => {
   // No GameId was given, so can't fetch data for a game. Return Error message in that case.
   if (props.gameId == null) {
     return (
@@ -193,134 +195,131 @@ export const TeamGame: React.FunctionComponent<GameProps> = props => {
     },
   );
 
-  useEffect(
-    () => {
-      let unmounted = false;
-      if (props.gameId != null) {
-        // TODO: This is the wrong action and state for closing the game and returning to mainpage.
-        try {
-          QuizzDataHandler.connect();
-          QuizzDataHandler.joinQuiz(
-            props.gameId,
-            props.team,
-            (response, ownTeam) => {
-              console.log('Joined quiz:');
-              console.log(response);
-              if (!unmounted) {
-                dispatch({
-                  type: ReducerActionTypes.quizJoined,
-                  payload: {
-                    quiz: response,
-                    ownTeam: ownTeam,
-                  },
-                });
-              }
-            },
-            err => {
-              props.onDisconnect(
-                'Someone in the quizz is already using that team name.',
-              );
-              if (!unmounted) {
-                dispatch({
-                  type: ReducerActionTypes.nameClash,
-                  payload: GameState.nameClash,
-                });
-              }
-            },
-          );
-          QuizzDataHandler.onQuizClose(() => {
-            console.log('Quiz disconnected.');
+  useEffect(() => {
+    let unmounted = false;
+    if (props.gameId != null) {
+      // TODO: This is the wrong action and state for closing the game and returning to mainpage.
+      try {
+        QuizzDataHandler.connect();
+        QuizzDataHandler.joinQuiz(
+          props.gameId,
+          props.team,
+          (response, ownTeam) => {
+            console.log('Joined quiz:');
+            console.log(response);
             if (!unmounted) {
               dispatch({
-                type: ReducerActionTypes.quizClosed,
-                payload: GameState.disconnect,
+                type: ReducerActionTypes.quizJoined,
+                payload: {
+                  quiz: response,
+                  ownTeam: ownTeam,
+                },
               });
             }
-          });
-          QuizzDataHandler.onTeamJoin(team => {
-            console.log(team);
+          },
+          (err) => {
+            props.onDisconnect(
+              'Someone in the quizz is already using that team name.',
+            );
             if (!unmounted) {
               dispatch({
-                type: ReducerActionTypes.teamJoined,
-                payload: { team: team, ownTeamName: props.team.name },
+                type: ReducerActionTypes.nameClash,
+                payload: GameState.nameClash,
               });
             }
-          });
-          QuizzDataHandler.onTeamLeft(id => {
-            console.log('On team left response');
-            console.log(id);
-            if (!unmounted) {
-              dispatch({ type: ReducerActionTypes.teamRemoval, payload: id });
-            }
-          });
-          QuizzDataHandler.onTeamKick(id => {
-            console.log('On team kicked response');
-            console.log(id);
-            if (!unmounted) {
-              dispatch({ type: ReducerActionTypes.teamRemoval, payload: id });
-            }
-          });
-          QuizzDataHandler.onGameStateChange(gameState => {
-            console.log('New game state');
-            console.log(gameState);
-            if (!unmounted) {
-              dispatch({
-                type: ReducerActionTypes.gameStateChange,
-                payload: gameState,
-              });
-            }
-          });
-          QuizzDataHandler.onQuestionSelected(questionId => {
-            console.log('New question');
-            console.log(questionId);
-            if (!unmounted) {
-              dispatch({
-                type: ReducerActionTypes.questionSelected,
-                payload: questionId,
-              });
-            }
-          });
-          QuizzDataHandler.onDisconnect(() => {
-            if (!unmounted) {
-              dispatch({
-                type: ReducerActionTypes.criticalError,
-                payload: 'It seems we disconnected.',
-              });
-            }
-          });
-        } catch (err) {
-          console.log('An error occured when joining quiz.');
+          },
+        );
+        QuizzDataHandler.onQuizClose(() => {
+          console.log('Quiz disconnected.');
+          if (!unmounted) {
+            dispatch({
+              type: ReducerActionTypes.quizClosed,
+              payload: GameState.disconnect,
+            });
+          }
+        });
+        QuizzDataHandler.onTeamJoin((team) => {
+          console.log(team);
+          if (!unmounted) {
+            dispatch({
+              type: ReducerActionTypes.teamJoined,
+              payload: { team: team, ownTeamName: props.team.name },
+            });
+          }
+        });
+        QuizzDataHandler.onTeamLeft((id) => {
+          console.log('On team left response');
+          console.log(id);
+          if (!unmounted) {
+            dispatch({ type: ReducerActionTypes.teamRemoval, payload: id });
+          }
+        });
+        QuizzDataHandler.onTeamKick((id) => {
+          console.log('On team kicked response');
+          console.log(id);
+          if (!unmounted) {
+            dispatch({ type: ReducerActionTypes.teamRemoval, payload: id });
+          }
+        });
+        QuizzDataHandler.onGameStateChange((gameState) => {
+          console.log('New game state');
+          console.log(gameState);
+          if (!unmounted) {
+            dispatch({
+              type: ReducerActionTypes.gameStateChange,
+              payload: gameState,
+            });
+          }
+        });
+        QuizzDataHandler.onQuestionSelected((questionId) => {
+          console.log('New question');
+          console.log(questionId);
+          if (!unmounted) {
+            dispatch({
+              type: ReducerActionTypes.questionSelected,
+              payload: questionId,
+            });
+          }
+        });
+        QuizzDataHandler.onDisconnect(() => {
           if (!unmounted) {
             dispatch({
               type: ReducerActionTypes.criticalError,
-              payload: 'An error occured when joining quiz.',
+              payload: 'It seems we disconnected.',
             });
           }
-          // setError(err.message);
-        }
-      } else {
-        // setError('No gameID found to connect to. Please retry.');
+        });
+      } catch (err) {
+        console.log('An error occured when joining quiz.');
         if (!unmounted) {
           dispatch({
             type: ReducerActionTypes.criticalError,
-            payload: 'No gameID found to connect to. Please retry.',
+            payload: 'An error occured when joining quiz.',
           });
         }
+        // setError(err.message);
       }
+    } else {
+      // setError('No gameID found to connect to. Please retry.');
+      if (!unmounted) {
+        dispatch({
+          type: ReducerActionTypes.criticalError,
+          payload: 'No gameID found to connect to. Please retry.',
+        });
+      }
+    }
 
-      return () => {
-        unmounted = true;
-        console.log('Leaving game.');
-        try {
-          QuizzDataHandler.closeConnection();
-          // TODO: Return to homescreen. If error, sudden DC, show error.
-        } catch (err) {
-          console.log(err);
-        }
-      };
-    },
-    [props.gameId],
-  );
+    return () => {
+      unmounted = true;
+      console.log('Leaving game.');
+      try {
+        QuizzDataHandler.closeConnection();
+        // TODO: Return to homescreen. If error, sudden DC, show error.
+      } catch (err) {
+        console.log(err);
+      }
+    };
+  }, [props.gameId]);
 
   const retryToJoin = (name: string) => {
     dispatch({
@@ -343,7 +342,7 @@ export const TeamGame: React.FunctionComponent<GameProps> = props => {
           },
         });
       },
-      err => {
+      (err) => {
         props.onDisconnect(
           'Someone in the quizz is already using that team name.',
         );
@@ -357,7 +356,7 @@ export const TeamGame: React.FunctionComponent<GameProps> = props => {
 
   const leaveQuiz = () => {
     const team = state.quiz.teams.find(
-      teamFind => teamFind.name === props.team.name,
+      (teamFind) => teamFind.name === props.team.name,
     );
     const teamId = team ? team._id : '';
     try {
@@ -381,7 +380,7 @@ export const TeamGame: React.FunctionComponent<GameProps> = props => {
   const sendAnswer = (questionId: string, answer: string) => {
     QuizzDataHandler.saveAnswer(
       answer,
-      err => console.log('Something happened when saving the answer.'),
+      (err) => console.log('Something happened when saving the answer.'),
       () => {
         console.log('Successfully saved an answer.');
       },
@@ -392,7 +391,7 @@ export const TeamGame: React.FunctionComponent<GameProps> = props => {
   const updateAnswer = (questionId: string, answer: string) => {
     QuizzDataHandler.updateAnswer(
       answer,
-      err => console.log('Something happened when saving the answer.'),
+      (err) => console.log('Something happened when saving the answer.'),
       () => {
         console.log('Successfully saved an answer.');
       },
@@ -413,7 +412,7 @@ export const TeamGame: React.FunctionComponent<GameProps> = props => {
         return (
           <ChangeTeamName
             teamName={state.ownTeam.name}
-            changeName={name => retryToJoin(name)}
+            changeName={(name) => retryToJoin(name)}
           />
         );
       case GameState.preparingQuiz:

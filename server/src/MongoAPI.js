@@ -1,7 +1,8 @@
-import { mongoose, model } from 'mongoose';
-import { QuizSchema } from './schemas/QuizSchema';
-import { QuestionSchema } from './schemas/QuestionSchema';
-import { CategorySchema } from './schemas/CategorySchema';
+import mongoose, { model } from 'mongoose';
+import QuizSchema from './schemas/QuizSchema';
+import QuestionSchema from './schemas/QuestionSchema';
+import CategorySchema from './schemas/CategorySchema';
+import AnswerSchema from './schemas/AnswerSchema';
 
 export default () => {
   mongoose.connect('mongodb://localhost/quizzer');
@@ -9,6 +10,7 @@ export default () => {
   const Quiz = model('Quiz', QuizSchema);
   const Category = model('Category', CategorySchema);
   const Question = model('Question', QuestionSchema);
+  const Answer = model('Answer', AnswerSchema);
 
   return {
     deleteTeam: async (quizId, teamId) => {
@@ -144,6 +146,33 @@ export default () => {
       return false;
     },
 
+    startRound: async (quizId, roundnr, categoryIds) => {
+      try {
+        const rounds = await Quiz.findByIdAndUpdate(
+          quizId,
+          {
+            $push: {
+              rounds: {
+                number: roundnr,
+                selectedCategories: categoryIds
+              }
+            }
+          },
+          {
+            rounds: 1,
+            _id: 0,
+            new: true
+          }
+        );
+        console.log('Inserted a new round.');
+        console.log(rounds.rounds[roundnr - 1]);
+        return rounds.rounds[roundnr - 1];
+      } catch (err) {
+        console.log(err.message);
+        throw err;
+      }
+    },
+
     getRandomQuestions: async categoryIds => {
       console.log('Getting random questions');
       console.log(categoryIds);
@@ -181,13 +210,13 @@ export default () => {
       }
     },
 
-    setCurrentQuestion: async (quizId, roundId, questionId) => {
+    setCurrentQuestion: async (quizId, roundNr, questionId) => {
       try {
         const quiz = await Quiz.findOneAndUpdate(
-          { _id: quizId, 'rounds._id': roundId },
+          { _id: quizId, 'rounds.number': roundNr },
           {
             $push: {
-              questions: {
+              'rounds.$.questions': {
                 question: questionId,
                 answers: []
               }
@@ -202,39 +231,38 @@ export default () => {
     },
 
     // TODO: Finish this function.
-    saveAnswer: async (quizId, roundId, questionId, teamId, answer) => {
+    saveAnswer: async (quizId, roundNr, questionId, teamId, answer) => {
       try {
-        const quiz = await Quiz.findOneAndUpdate(
+        const savedAnswer = await Answer.create({
+          teamId,
+          questionId,
+          answer
+        });
+        await Quiz.findOneAndUpdate(
           {
             _id: quizId,
-            'rounds._id': roundId,
-            'rounds.questions._id': questionId,
-            'rounds.questions.answers.teamId': { $ne: teamId }
+            'rounds.number': roundNr,
+            'rounds.questions.question': questionId
           },
           {
-            $addToSet: {
-              'rounds.$[round].questions.$[question].answers': {
-                teamId,
-                answer
-              }
+            $push: {
+              'rounds.$[round].questions.$[question].answers': savedAnswer._id
             }
           },
           {
-            arrayFilters: [{ round: roundId, question: questionId, team: teamId }]
-          },
-          {
-            'rounds.$[round].questions.$[question].answers.$': 1,
+            arrayFilters: [{ round: roundNr, question: questionId }],
+            'rounds.$.answers': 1,
             new: true
           }
         );
-        console.log('Answer saved');
-        console.log(quiz);
+        // console.log('Answer saved');
+        // console.log(quiz);
         // const teamAnswer = quiz.currentRound.currentQuestion.answers.find(
         //   answer => answer.teamId.equals(teamId),
         // );
         // TODO: Does not work at the moment.
-        if (teamAnswer) {
-          return teamAnswer;
+        if (savedAnswer) {
+          return savedAnswer;
           // return {
           //   answer: teamAnswer.answers[0],
           //   version: teamAnswer.answers.length,
@@ -247,19 +275,25 @@ export default () => {
       }
     },
 
-    updateAnswer: async (quizId, roundId, questionId, teamId, answer) => {
+    updateAnswer: async (quizId, roundNr, questionId, answerId, answer) => {
       try {
-        const quiz = await Quiz.findOneAndUpdate(
+        const updatedAnswer = await Answer.findByIdAndUpdate(answerId, {
+          $inc: {
+            _version: 1
+          },
+          $set: {
+            answer
+          }
+        });
+        await Quiz.findOneAndUpdate(
           {
             _id: quizId,
-            'rounds.questions.$[question].answers.teamId': teamId
+            'rounds.number': roundNr,
+            'rounds.questions.question': questionId
           },
           {
-            $inc: {
-              'rounds.$[round].questions.$[question].answers.$[team]._version': 1
-            },
-            $set: {
-              'rounds.$[round].questions.$[question].answers.$[team].answer': answer
+            $push: {
+              'rounds.$[round].questions.$[question].answers': updatedAnswer._id
             }
             // $push: {
             //   'currentRound.currentQuestion.answers.$.answers': {
@@ -269,22 +303,18 @@ export default () => {
             // },
           },
           {
-            arrayFilters: [{ round: roundId, question: questionId, team: teamId }]
-          },
-          {
-            'rounds.$[round].questions.$[question].answers.$': 1,
-            new: true
+            arrayFilters: [{ round: roundNr, question: questionId }]
           }
         );
 
         console.log('Answer updated.');
-        console.log(quiz);
+        console.log(updatedAnswer);
         // const teamAnswer = quiz.currentRound.currentQuestion.answers.find(
         //   answer => answer.teamId.equals(teamId),
         // );
         // TODO: Does not work at the moment.
-        if (teamAnswer) {
-          return teamAnswer;
+        if (updatedAnswer) {
+          return updatedAnswer;
           // return {
           //   answer: teamAnswer.answers[0],
           //   version: teamAnswer.answers.length,
@@ -297,30 +327,16 @@ export default () => {
       }
     },
 
-    getAnswer: async (quizId, roundId, questionId, teamId) => {
+    getAnswer: async answerId => {
       try {
-        const quiz = await Quiz.findOne(
-          {
-            _id: quizId,
-            'rounds._id': roundId,
-            'rounds.questions._id': questionId,
-            'rounds.questions.answers.teamId': teamId
-          },
-          {
-            arrayFilters: [{ round: roundId, question: questionId, team: teamId }]
-          },
-          {
-            'rounds.$[round].questions.$[question].answers.$[team]': 1,
-            new: true
-          }
-        );
+        const retrievedAnswer = await Answer.findById(answerId);
 
         // const teamAnswer = quiz.currentRound.currentQuestion.answers.find(
         //   answer => answer.teamId.equals(teamId),
         // );
         // TODO: Does not work at the moment.
-        if (teamAnswer) {
-          return teamAnswer;
+        if (retrievedAnswer) {
+          return retrievedAnswer;
           // return {
           //   answer: teamAnswer.answers[0],
           //   version: teamAnswer.answers.length,

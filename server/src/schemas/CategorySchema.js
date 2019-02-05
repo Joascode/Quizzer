@@ -1,5 +1,5 @@
 import { Schema } from 'mongoose';
 
-export const CategorySchema = new Schema({
-  category: String,
+export default new Schema({
+  category: String
 });

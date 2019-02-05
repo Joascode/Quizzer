@@ -1,16 +1,19 @@
 import { Schema } from 'mongoose';
 
-export const AnswerSchema = new Schema({
+export default new Schema({
   teamId: {
-    type: Schema.Types.ObjectId,
+    type: Schema.Types.ObjectId
+  },
+  questionId: {
+    type: Schema.Types.ObjectId
   },
   answer: String,
   correct: {
     type: Boolean,
-    default: false,
+    default: false
   },
   _version: {
     type: Number,
-    default: 1,
-  },
+    default: 1
+  }
 });

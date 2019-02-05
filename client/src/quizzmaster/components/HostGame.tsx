@@ -133,7 +133,8 @@ function wsReducer(state: ReducerModel, action: ReducerActions) {
           _id: action.payload._id,
           name: action.payload.name,
           teams: action.payload.teams,
-          round: action.payload.currentRound,
+          round: state.quiz.round,
+          // round: action.payload.currentRound,
         },
       };
     }
@@ -161,7 +162,7 @@ function wsReducer(state: ReducerModel, action: ReducerActions) {
       console.log('Someone left');
       console.log(state.quiz.teams);
       const index = state.quiz.teams.findIndex(
-        team => team._id === action.payload,
+        (team) => team._id === action.payload,
       );
       console.log(index);
       const quiz = { ...state.quiz };
@@ -213,7 +214,9 @@ function wsReducer(state: ReducerModel, action: ReducerActions) {
       };
     case ReducerActionTypes.answerReceived: {
       const quiz = { ...state.quiz };
-      const team = quiz.teams.find(team => team._id === action.payload.teamId);
+      const team = quiz.teams.find(
+        (team) => team._id === action.payload.teamId,
+      );
       // TODO: Check for versionnumber to see if old answer was arrived later than new answer.
       if (team) {
         team.answer = {
@@ -228,26 +231,33 @@ function wsReducer(state: ReducerModel, action: ReducerActions) {
       };
     }
     case ReducerActionTypes.closeQuestion:
-      return {
-        ...state,
-        quiz: {
-          ...state.quiz,
-          round: {
-            ...state.quiz.round,
-            questions: [
-              ...state.quiz.round.questions,
-              state.quiz.currentQuestion,
-            ],
+      if (state.quiz.currentQuestion) {
+        return {
+          ...state,
+          quiz: {
+            ...state.quiz,
+            round: {
+              ...state.quiz.round,
+              questions: [
+                ...state.quiz.round.questions,
+                state.quiz.currentQuestion,
+              ],
+            },
           },
-        },
-        gameState: GameStates.questionJudging,
-      };
+          gameState: GameStates.questionJudging,
+        };
+      } else {
+        return {
+          ...state,
+          gameState: GameStates.questionJudging,
+        };
+      }
     case ReducerActionTypes.decideAnswer: {
       return {
         ...state,
         quiz: {
           ...state.quiz,
-          teams: state.quiz.teams.map(team => {
+          teams: state.quiz.teams.map((team) => {
             if (team._id === action.payload) {
               team.answer.correct = !team.answer.correct;
             }
@@ -269,7 +279,7 @@ function wsReducer(state: ReducerModel, action: ReducerActions) {
   }
 }
 
-export const HostGame: FunctionComponent<HostGameProps> = props => {
+export const HostGame: FunctionComponent<HostGameProps> = (props) => {
   const [error, setError] = useState('');
   const [state, dispatch] = useReducer<ReducerModel, ReducerActions>(
     wsReducer,
@@ -282,7 +292,7 @@ export const HostGame: FunctionComponent<HostGameProps> = props => {
         maxNQuestionsPerRound: props.quiz.maxNQuestions,
         round: {
           nr: 1,
-          questions: [],
+          questions: new Array<QuestionModel>(),
         },
         teams: [],
       },
@@ -291,115 +301,109 @@ export const HostGame: FunctionComponent<HostGameProps> = props => {
     },
   );
 
-  useEffect(
-    () => {
-      let unmounted = false;
-      console.log('Created a new datahandler api.');
-      try {
-        QuizzDataHandler.connect();
-        QuizzDataHandler.hostGame(props.quiz, quiz => {
-          console.log('Successfully created a room.');
-          if (!unmounted) {
-            dispatch({ type: ReducerActionTypes.quizCreated, payload: quiz });
-          }
-        }); // TODO: Send quiz information to this call and let it handle saving to db and create a host on the ws server.
-        QuizzDataHandler.onTeamJoin(data => {
-          console.log('On team join response');
-          console.log(data);
-          if (!unmounted) {
-            dispatch({ type: ReducerActionTypes.teamJoined, payload: data });
-          }
-        });
-        QuizzDataHandler.onTeamLeft(id => {
-          console.log('On team left response');
-          console.log(id);
-          if (!unmounted) {
-            dispatch({ type: ReducerActionTypes.teamLeft, payload: id });
-          }
-        });
-        QuizzDataHandler.onTeamKick(id => {
-          console.log('On team kick response');
-          console.log(id);
-          if (!unmounted) {
-            dispatch({ type: ReducerActionTypes.teamLeft, payload: id });
-          }
-        });
-        QuizzDataHandler.onAnswer(teamId => {
-          console.log('On team answer response');
-          console.log(teamId);
-          getTeamAnswer(teamId);
-        });
-        // TODO: Create Data Handler for stop hosting, so it does not count as a disconnect.
-        QuizzDataHandler.onDisconnect(() => {
-          props.onDisconnect('Game got disconnected from the server :( ');
-          if (!unmounted) {
-            dispatch({
-              type: ReducerActionTypes.quizClosed,
-              payload: GameStates.disconnect,
-            });
-          }
-        });
-      } catch (err) {
-        setError(err.message);
-      }
-      return () => {
-        unmounted = true;
-        try {
-          QuizzDataHandler.disconnectGame();
-        } catch (err) {
-          console.log(err);
+  useEffect(() => {
+    let unmounted = false;
+    console.log('Created a new datahandler api.');
+    try {
+      QuizzDataHandler.connect();
+      QuizzDataHandler.hostGame(props.quiz, (quiz) => {
+        console.log('Successfully created a room.');
+        if (!unmounted) {
+          dispatch({ type: ReducerActionTypes.quizCreated, payload: quiz });
         }
-      };
-    },
-    [props.quiz.name],
-  );
-
-  // Responsible for fetching data after gameState change. Required for rendering of component and afterwards fetching the required data.
-  useEffect(
-    () => {
-      // Be aware of no socket connection. Different useeffect with no connect call. At the moment no socket connection is required for these fetches.
-      // But be mindful that this can change in the future.
-      // TODO: Get rid of this and place it in the PrepareRound component. Even though that component gets connection stuff, there's too much happening here.
-      try {
-        switch (state.gameState) {
-          case GameStates.prepareRound: {
-            if (state.availableCategories.length <= 0) {
-              QuizzDataHandler.fetchCategories(
-                err => {
-                  console.log(
-                    'Something bad happened while fetching categories.',
-                  );
-                  console.log(err);
-                },
-                categories => {
-                  console.log('Succesfully fetched categories');
-                  dispatch({
-                    type: ReducerActionTypes.newCategories,
-                    payload: categories,
-                  });
-                },
-              );
-            }
-
-            break;
-          }
-          case GameStates.selectQuestion: {
-            // fetchNewRandomQuestions();
-            break;
-          }
+      }); // TODO: Send quiz information to this call and let it handle saving to db and create a host on the ws server.
+      QuizzDataHandler.onTeamJoin((data) => {
+        console.log('On team join response');
+        console.log(data);
+        if (!unmounted) {
+          dispatch({ type: ReducerActionTypes.teamJoined, payload: data });
         }
+      });
+      QuizzDataHandler.onTeamLeft((id) => {
+        console.log('On team left response');
+        console.log(id);
+        if (!unmounted) {
+          dispatch({ type: ReducerActionTypes.teamLeft, payload: id });
+        }
+      });
+      QuizzDataHandler.onTeamKick((id) => {
+        console.log('On team kick response');
+        console.log(id);
+        if (!unmounted) {
+          dispatch({ type: ReducerActionTypes.teamLeft, payload: id });
+        }
+      });
+      QuizzDataHandler.onAnswer((teamId) => {
+        console.log('On team answer response');
+        console.log(teamId);
+        getTeamAnswer(teamId);
+      });
+      // TODO: Create Data Handler for stop hosting, so it does not count as a disconnect.
+      QuizzDataHandler.onDisconnect(() => {
+        props.onDisconnect('Game got disconnected from the server :( ');
+        if (!unmounted) {
+          dispatch({
+            type: ReducerActionTypes.quizClosed,
+            payload: GameStates.disconnect,
+          });
+        }
+      });
+    } catch (err) {
+      setError(err.message);
+    }
+    return () => {
+      unmounted = true;
+      try {
+        QuizzDataHandler.disconnectGame();
       } catch (err) {
-        console.log(
-          'Something bad happened inside the useeffect for fetching data on state change',
-        );
         console.log(err);
       }
-      return () => {
-        console.log('State has changed.');
-      };
-    },
-    [state.gameState],
-  );
+    };
+  }, [props.quiz.name]);
+
+  // Responsible for fetching data after gameState change. Required for rendering of component and afterwards fetching the required data.
+  useEffect(() => {
+    // Be aware of no socket connection. Different useeffect with no connect call. At the moment no socket connection is required for these fetches.
+    // But be mindful that this can change in the future.
+    // TODO: Get rid of this and place it in the PrepareRound component. Even though that component gets connection stuff, there's too much happening here.
+    try {
+      switch (state.gameState) {
+        case GameStates.prepareRound: {
+          if (state.availableCategories.length <= 0) {
+            QuizzDataHandler.fetchCategories(
+              (err) => {
+                console.log(
+                  'Something bad happened while fetching categories.',
+                );
+                console.log(err);
+              },
+              (categories) => {
+                console.log('Succesfully fetched categories');
+                dispatch({
+                  type: ReducerActionTypes.newCategories,
+                  payload: categories,
+                });
+              },
+            );
+          }
+
+          break;
+        }
+        case GameStates.selectQuestion: {
+          // fetchNewRandomQuestions();
+          break;
+        }
+      }
+    } catch (err) {
+      console.log(
+        'Something bad happened inside the useeffect for fetching data on state change',
+      );
+      console.log(err);
+    }
+    return () => {
+      console.log('State has changed.');
+    };
+  }, [state.gameState]);
 
   const closeGame = () => {
     console.log('Game completely ended.');
@@ -417,7 +421,7 @@ export const HostGame: FunctionComponent<HostGameProps> = props => {
   const startQuiz = () => {
     console.log('Starting quiz.');
     QuizzDataHandler.startQuiz(
-      err => console.log(err),
+      (err) => console.log(err),
       () => {
         dispatch({
           type: ReducerActionTypes.startQuiz,
@@ -431,8 +435,9 @@ export const HostGame: FunctionComponent<HostGameProps> = props => {
     console.log('Categories received!');
     console.log(categories);
     QuizzDataHandler.startRound(
-      categories.map(category => category._id),
-      err => console.log(err),
+      state.quiz.round.nr,
+      categories.map((category) => category._id),
+      (err) => console.log(err),
       () => {
         dispatch({
           type: ReducerActionTypes.startRound,
@@ -447,7 +452,8 @@ export const HostGame: FunctionComponent<HostGameProps> = props => {
     console.log(question);
     QuizzDataHandler.startQuestion(
       question._id,
-      err => console.log(err),
+      state.quiz.round.nr,
+      (err) => console.log(err),
       () => {
         dispatch({ type: ReducerActionTypes.startQuestion, payload: question });
       },
@@ -457,8 +463,8 @@ export const HostGame: FunctionComponent<HostGameProps> = props => {
   const getTeamAnswer = (teamId: string) => {
     QuizzDataHandler.getAnswer(
       teamId,
-      err => console.log(err),
-      answer => {
+      (err) => console.log(err),
+      (answer) => {
         console.log(answer);
         dispatch({
           type: ReducerActionTypes.answerReceived,
@@ -544,7 +550,7 @@ export const HostGame: FunctionComponent<HostGameProps> = props => {
             addTeam={() =>
               console.log('Add team.')
             } /* TODO: Change to proper function. */
-            removeTeam={team => removeTeam(team)}
+            removeTeam={(team) => removeTeam(team)}
             startQuiz={() => startQuiz()}
           />
         </div>
@@ -589,8 +595,8 @@ export const HostGame: FunctionComponent<HostGameProps> = props => {
           }
           endRound={() => endRound()}
           nextQuestion={() => nextQuestion()}
-          setIncorrect={teamId => setAnswerCorrectness(teamId)}
-          setCorrect={teamId => setAnswerCorrectness(teamId)}
+          setIncorrect={(teamId) => setAnswerCorrectness(teamId)}
+          setCorrect={(teamId) => setAnswerCorrectness(teamId)}
         />
       );
     // // TODO: Decide when to show team stats, like scores and such.

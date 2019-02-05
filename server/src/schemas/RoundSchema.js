@@ -1,11 +1,10 @@
 import { Schema } from 'mongoose';
-import { AnswerSchema } from './AnswerSchema';
 
 export default new Schema({
-  // number: {
-  //   default: 1,
-  //   type: Number,
-  // },
+  number: {
+    default: 1,
+    type: Number
+  },
   // currentQuestion: {
   //   question: { type: Schema.Types.ObjectId, ref: 'Question' },
   //   answers: { type: [AnswerSchema], default: [] },
@@ -14,11 +13,7 @@ export default new Schema({
     type: [
       {
         question: { type: Schema.Types.ObjectId, ref: 'Question' },
-        answers: { type: [AnswerSchema], default: [] },
-        open: {
-          type: Boolean,
-          default: true
-        }
+        answers: { type: [{ type: Schema.Types.ObjectId, ref: 'Answer' }], default: [] }
       }
     ],
     default: []

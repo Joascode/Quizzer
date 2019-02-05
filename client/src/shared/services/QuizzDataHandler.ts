@@ -28,7 +28,7 @@ export class QuizzDataHandler {
       () => console.log('Closed'),
     );
 
-    QuizzWebsocketAPI.onMessage(message => {
+    QuizzWebsocketAPI.onMessage((message) => {
       switch (message.action) {
         case WSActions.joinQuiz:
           this.getTeam(message.data.quizId, message.data.teamId);
@@ -78,12 +78,12 @@ export class QuizzDataHandler {
     onerror: (err: any) => void = () => {},
   ) {
     QuizzDataAPI.createQuiz(quiz)
-      .then(newQuiz => {
-        QuizzWebsocketAPI.hostQuiz(newQuiz.quiz._id);
-        this.quizId = newQuiz.quiz._id;
-        onsuccess(newQuiz.quiz);
+      .then((newQuiz) => {
+        QuizzWebsocketAPI.hostQuiz(newQuiz._id);
+        this.quizId = newQuiz._id;
+        onsuccess(newQuiz);
       })
-      .catch(err => onerror(err));
+      .catch((err) => onerror(err));
   }
 
   public static joinQuiz(
@@ -93,7 +93,7 @@ export class QuizzDataHandler {
     onerror: (err: any) => void = () => {},
   ) {
     QuizzDataAPI.joinQuiz(quizId, team)
-      .then(response => {
+      .then((response) => {
         console.log('Response after joining quiz.');
         console.log(response);
         // TODO: Add checking if data exists.
@@ -106,7 +106,7 @@ export class QuizzDataHandler {
           onsuccess(response, joinedTeam);
         });
       })
-      .catch(err => {
+      .catch((err) => {
         console.log('An error occured. ' + err.message);
         onerror(err);
       });
@@ -128,7 +128,7 @@ export class QuizzDataHandler {
             throw new Error(err);
           }
         })
-        .catch(err => {
+        .catch((err) => {
           console.log('Something bad happened when removing a team.');
           console.log(err.message);
           onerror();
@@ -156,7 +156,7 @@ export class QuizzDataHandler {
           throw new Error(err);
         }
       })
-      .catch(err => {
+      .catch((err) => {
         console.log('Something bad happened when removing a team.');
         console.log(err.message);
         onerror();
@@ -177,7 +177,7 @@ export class QuizzDataHandler {
             onsuccess,
           );
         })
-        .catch(err => {
+        .catch((err) => {
           console.log('Something bad happened when closing the quiz.');
           console.log(err.message);
           onerror(err.message);
@@ -189,21 +189,22 @@ export class QuizzDataHandler {
 
   // TODO: Encapsulate with saving of selected categories on specific round
   public static startRound(
+    roundNr: number,
     categoryIds: string[],
     onerror: (msg: string) => void = () => {},
     onsuccess: () => void = () => {},
   ) {
     if (this.quizId) {
       const quizId = this.quizId;
-      QuizzDataAPI.saveSelectedCategories(quizId, categoryIds)
-        .then(round => {
+      QuizzDataAPI.startRound(quizId, roundNr, categoryIds)
+        .then((round) => {
           QuizzWebsocketAPI.changeGameState(
             quizId,
             GameStates.selectQuestion.toString(),
             onsuccess,
           );
         })
-        .catch(err => {
+        .catch((err) => {
           console.log(err.message);
           onerror(err.message);
         });
@@ -216,16 +217,17 @@ export class QuizzDataHandler {
   // TODO: Does not yet send the questionId to the team
   public static startQuestion(
     questionId: string,
+    roundNr: number,
     onerror: (msg: string) => void = () => {},
     onsuccess: () => void = () => {},
   ) {
     if (this.quizId) {
       const quizId = this.quizId;
-      QuizzDataAPI.saveSelectedQuestion(quizId, questionId)
-        .then(round => {
+      QuizzDataAPI.saveSelectedQuestion(quizId, roundNr, questionId)
+        .then((round) => {
           QuizzWebsocketAPI.sendQuestion(quizId, questionId, onsuccess);
         })
-        .catch(err => {
+        .catch((err) => {
           console.log(err.message);
           onerror(err.message);
         });
@@ -394,14 +396,14 @@ export class QuizzDataHandler {
 
   private static getTeam(quizId: string, teamId: string) {
     QuizzDataAPI.getTeam(quizId, teamId)
-      .then(response => {
+      .then((response) => {
         if (this.teamJoinCb) {
           this.teamJoinCb(response);
         } else {
           console.log('No callback set for fetching teams.');
         }
       })
-      .catch(err =>
+      .catch((err) =>
         console.log(
           'Encountered error when connecting to backend. ' + err.message,
         ),
