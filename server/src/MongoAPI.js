@@ -5,7 +5,7 @@ import CategorySchema from './schemas/CategorySchema';
 import AnswerSchema from './schemas/AnswerSchema';
 
 export default () => {
-  mongoose.connect('mongodb://localhost/quizzer');
+  mongoose.connect('mongodb://localhost/quizzer', { useNewUrlParser: true });
 
   const Quiz = model('Quiz', QuizSchema);
   const Category = model('Category', CategorySchema);
@@ -234,11 +234,13 @@ export default () => {
     saveAnswer: async (quizId, roundNr, questionId, teamId, answer) => {
       try {
         const savedAnswer = await Answer.create({
+          quizId,
           teamId,
           questionId,
+          roundNr,
           answer
         });
-        await Quiz.findOneAndUpdate(
+        const quizAnswers = await Quiz.findOneAndUpdate(
           {
             _id: quizId,
             'rounds.number': roundNr,
@@ -250,11 +252,14 @@ export default () => {
             }
           },
           {
-            arrayFilters: [{ round: roundNr, question: questionId }],
+            arrayFilters: [{ 'round.number': roundNr }, { 'question.question': questionId }],
             'rounds.$.answers': 1,
             new: true
           }
         );
+        console.log('Answer saved');
+        console.log(savedAnswer);
+        console.log(quizAnswers);
         // console.log('Answer saved');
         // console.log(quiz);
         // const teamAnswer = quiz.currentRound.currentQuestion.answers.find(
@@ -275,7 +280,7 @@ export default () => {
       }
     },
 
-    updateAnswer: async (quizId, roundNr, questionId, answerId, answer) => {
+    updateAnswer: async (answerId, answer) => {
       try {
         const updatedAnswer = await Answer.findByIdAndUpdate(answerId, {
           $inc: {
@@ -285,27 +290,6 @@ export default () => {
             answer
           }
         });
-        await Quiz.findOneAndUpdate(
-          {
-            _id: quizId,
-            'rounds.number': roundNr,
-            'rounds.questions.question': questionId
-          },
-          {
-            $push: {
-              'rounds.$[round].questions.$[question].answers': updatedAnswer._id
-            }
-            // $push: {
-            //   'currentRound.currentQuestion.answers.$.answers': {
-            //     $each: [{ answer: answer }],
-            //     $position: 0,
-            //   },
-            // },
-          },
-          {
-            arrayFilters: [{ round: roundNr, question: questionId }]
-          }
-        );
 
         console.log('Answer updated.');
         console.log(updatedAnswer);
@@ -342,7 +326,28 @@ export default () => {
           //   version: teamAnswer.answers.length,
           // };
         }
-        throw new Error('No team found in the array of answers.');
+        throw new Error(`No answer found for ${answerId}.`);
+      } catch (err) {
+        console.log(err.message);
+        throw err;
+      }
+    },
+
+    setAnswerCorrectness: async (answerId, correct) => {
+      try {
+        const updatedAnswer = await Answer.findByIdAndUpdate(
+          answerId,
+          {
+            $set: {
+              correct
+            }
+          },
+          { new: true }
+        );
+        if (updatedAnswer) {
+          return updatedAnswer;
+        }
+        throw new Error(`No answer found for ${answerId}.`);
       } catch (err) {
         console.log(err.message);
         throw err;
@@ -381,7 +386,51 @@ export default () => {
         const categories = await Question.find({});
         return categories;
       } catch (err) {
-        throw new Error(err);
+        throw err;
+      }
+    },
+
+    getAnswersOfTeamsForRound: async (quizId, roundNr) => {
+      try {
+        const teamAnswers = await Answer.find({ quizId, roundNr });
+        return teamAnswers;
+      } catch (err) {
+        throw err;
+      }
+    },
+
+    saveTeamScores: async (quizId, teamScores) => {
+      try {
+        const teams = await Quiz.findById(quizId, { teams: 1 });
+        if (teams) {
+          const teamsWithNewScores = teams.map(team => {
+            const newTeam = { ...team };
+            teamScores.forEach(teamScore => {
+              if (teamScore._id === team._id) {
+                newTeam.score += teamScore.score;
+              }
+            });
+            return newTeam;
+          });
+          const updatedteams = await Quiz.findOneAndUpdate(
+            {
+              _id: quizId
+            },
+            {
+              $set: {
+                teams: teamsWithNewScores
+              }
+            },
+            {
+              teams: 1,
+              new: true
+            }
+          );
+          return updatedteams;
+        }
+        throw new Error(`No teams found for given quizId: ${quizId}`);
+      } catch (err) {
+        throw err;
       }
     }
 

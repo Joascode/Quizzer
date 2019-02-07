@@ -10,12 +10,13 @@ interface QuestionProps {
     question: string;
     category: string;
   };
+  questionReceived: (question: any) => void;
   sendAnswer: (questionId: string, answer: string) => void;
   sendUpdate: (questionId: string, answer: string) => void;
 }
 
 // TODO: Encapsulate component with HOC for question fetching.
-export const Question: React.FunctionComponent<QuestionProps> = props => {
+export const Question: React.FunctionComponent<QuestionProps> = (props) => {
   if (!props.question) {
     return <div>No question available.</div>;
   }
@@ -29,31 +30,29 @@ export const Question: React.FunctionComponent<QuestionProps> = props => {
   const [previousAnswers, addAnswer] = useState<string[]>([]);
   const [answered, setAnswered] = useState(false);
 
-  useEffect(
-    () => {
-      let mounted = true;
-      if (props.question) {
-        console.log(props.question._id);
-        QuizzDataHandler.fetchQuestion(
-          props.question._id,
-          err => console.log(err),
-          question => {
-            if (mounted) {
-              setQuestion({
-                _id: question._id,
-                question: question.question,
-                category: question.category.category,
-              });
-            }
-          },
-        );
-      }
-      return () => {
-        mounted = false;
-      };
-    },
-    [props.question._id],
-  );
+  useEffect(() => {
+    let mounted = true;
+    if (props.question) {
+      console.log(props.question._id);
+      QuizzDataHandler.fetchQuestion(
+        props.question._id,
+        (err) => console.log(err),
+        (question) => {
+          if (mounted) {
+            props.questionReceived(question);
+            setQuestion({
+              _id: question._id,
+              question: question.question,
+              category: question.category.category,
+            });
+          }
+        },
+      );
+    }
+    return () => {
+      mounted = false;
+    };
+  }, [props.question._id]);
 
   const sendAnswer = () => {
     addAnswer([...previousAnswers, answer]);
@@ -70,7 +69,10 @@ export const Question: React.FunctionComponent<QuestionProps> = props => {
     <Fragment>
       <h3>{question.question}</h3>
       <p>{question.category}</p>
-      <input value={answer} onChange={event => setAnswer(event.target.value)} />
+      <input
+        value={answer}
+        onChange={(event) => setAnswer(event.target.value)}
+      />
       {answered ? (
         <Button onClick={() => sendUpdate()}>Update</Button>
       ) : (

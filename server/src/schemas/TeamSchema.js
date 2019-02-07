@@ -14,5 +14,9 @@ export default new Schema({
     type: [String],
     required: true,
     validate: [arrayLimit, '{PATH} does not exceeds the limit of 2']
+  },
+  score: {
+    type: Number,
+    default: 0
   }
 });

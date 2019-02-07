@@ -12,14 +12,14 @@ interface QuestionAnsweringProps {
   annoyTeam: (annoyance: any, teamId: string) => void;
 }
 
-export const QuestionAnswering: FunctionComponent<
-  QuestionAnsweringProps
-> = props => {
+export const QuestionAnswering: FunctionComponent<QuestionAnsweringProps> = (
+  props,
+) => {
   if (!props.question) {
     return <div>No question was set.</div>;
   }
 
-  const [timeToClose, setTimeToClose] = useState(15);
+  const [timeToClose, setTimeToClose] = useState(5);
 
   useEffect(() => {
     let mounted = true;

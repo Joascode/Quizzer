@@ -218,30 +218,14 @@ export class QuizzDataAPI {
   static async saveAnswer(
     quizId: string,
     teamId: string,
-    answer: string,
-  ): Promise<any> {
-    return fetch(`${this.serverUrl}/quiz/${quizId}/team/${teamId}/answer`, {
-      method: 'POST',
-      body: JSON.stringify({
-        answer: answer,
-      }),
-      headers: { 'Content-Type': 'application/json' },
-    }).then((data) => {
-      console.log(data);
-      if (data.status === 200) {
-        return data.json();
-      }
-      throw new Error(`Unable to save answer: ${data.status}`);
-    });
-  }
-
-  static async updateAnswer(
-    quizId: string,
-    teamId: string,
+    roundNr: number,
+    questionId: string,
     answer: string,
   ): Promise<any> {
     return fetch(
-      `${this.serverUrl}/quiz/${quizId}/team/${teamId}/answer/update`,
+      `${
+        this.serverUrl
+      }/quiz/${quizId}/round/${roundNr}/question/${questionId}/team/${teamId}/answer`,
       {
         method: 'POST',
         body: JSON.stringify({
@@ -258,8 +242,51 @@ export class QuizzDataAPI {
     });
   }
 
-  static async getAnswer(quizId: string, teamId: string): Promise<any> {
-    return fetch(`${this.serverUrl}/quiz/${quizId}/team/${teamId}/answer`, {
+  static async updateAnswer(answerId: string, answer: string): Promise<any> {
+    return fetch(`${this.serverUrl}/answer/${answerId}`, {
+      method: 'POST',
+      body: JSON.stringify({
+        answer: answer,
+      }),
+      headers: { 'Content-Type': 'application/json' },
+    }).then((data) => {
+      console.log(data);
+      if (data.status === 200) {
+        return data.json();
+      }
+      throw new Error(`Unable to save answer: ${data.status}`);
+    });
+  }
+
+  static async getAnswer(answerId: string): Promise<any> {
+    return fetch(`${this.serverUrl}/answer/${answerId}`, {
+      method: 'GET',
+    }).then((data) => {
+      console.log(data);
+      if (data.status === 200) {
+        return data.json();
+      }
+      throw new Error(`Unable to save answer: ${data.status}`);
+    });
+  }
+
+  static async setAnswerCorrectness(
+    answerId: string,
+    correct: boolean,
+  ): Promise<any> {
+    return fetch(`${this.serverUrl}/answer/${answerId}/correct/${correct}`, {
+      method: 'POST',
+    }).then((data) => {
+      console.log(data);
+      if (data.status === 200) {
+        return data.json();
+      }
+      throw new Error(`Unable to save answer: ${data.status}`);
+    });
+  }
+
+  static async fetchTeamsRoundScores(quizId: string, roundNr: number) {
+    return fetch(`${this.serverUrl}/quiz/${quizId}/round/${roundNr}/scores`, {
       method: 'GET',
     }).then((data) => {
       console.log(data);

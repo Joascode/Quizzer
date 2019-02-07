@@ -42,7 +42,7 @@ interface TeamProps {
 //   updateTeam: () => {},
 // });
 
-export const Team: FunctionComponent<TeamProps> = props => {
+export const Team: FunctionComponent<TeamProps> = (props) => {
   const [team, setTeam] = useState<Team>({ name: '', members: [] });
   const [teamState, setTeamState] = useState(TeamGameState.createTeam);
   const [gameId, setGameId] = useState<string | undefined>(undefined);

@@ -3,7 +3,6 @@ import { QuizzDataAPI } from './QuizzDataAPI';
 import { QuizModel } from '../../quizzmaster/components/Host';
 import { Team } from '../../quizzteam/components/Team';
 import { GameInfoModel } from '../../quizzteam/components/TeamGame';
-import { join } from 'path';
 import {
   GameStates,
   CategoryModel,
@@ -18,6 +17,7 @@ export class QuizzDataHandler {
   private static onGameStateChangeCb?: (gameState: GameStates) => void;
   private static onQuestionSelectedCb?: (questionId: string) => void;
   private static onAnswerCb?: (teamId: string) => void;
+  private static onAnswerJudgedCb?: (answer: any) => void;
   private static quizId?: string;
   private static teamId?: string;
 
@@ -60,9 +60,13 @@ export class QuizzDataHandler {
           break;
         case WSActions.questionAnswered:
           this.onAnswerCb
-            ? this.onAnswerCb(message.data.teamId)
+            ? this.onAnswerCb(message.data.answerId)
             : console.log('No callback set for answer given.');
           break;
+        case WSActions.answerJudged:
+          this.onAnswerJudgedCb
+            ? this.onAnswerJudgedCb(message.data)
+            : console.log('No callback set for answer judged.');
       }
     });
 
@@ -213,6 +217,47 @@ export class QuizzDataHandler {
     }
   }
 
+  public static getTeamsRoundScores(
+    roundNr: number,
+    onerror: (msg: string) => void = () => {},
+    onsuccess: (
+      scores: [{ teamId: string; totalCorrectAnswers: number; score: number }],
+    ) => void = () => {},
+  ) {
+    if (this.quizId) {
+      QuizzDataAPI.fetchTeamsRoundScores(this.quizId, roundNr)
+        .then(
+          (
+            scores: [
+              { teamId: string; totalCorrectAnswers: number; score: number }
+            ],
+          ) => {
+            onsuccess(scores);
+          },
+        )
+        .catch((err: Error) => onerror(err.message));
+    } else {
+      onerror(`Couldn't close quiz, missing quiz id.`);
+    }
+  }
+
+  public static endRound(
+    onerror: (msg: string) => void = () => {},
+    onsuccess: () => void = () => {},
+  ) {
+    if (this.quizId) {
+      QuizzWebsocketAPI.changeGameState(
+        this.quizId,
+        GameStates.closeRound,
+        onsuccess,
+      );
+
+      // QuizzWebsocketAPI.closeQuestion(this.quizId, onsuccess);
+    } else {
+      onerror(`Couldn't close quiz, missing quiz id.`);
+    }
+  }
+
   // TODO: Encapsulate with saving of selected question on specific round
   // TODO: Does not yet send the questionId to the team
   public static startQuestion(
@@ -231,6 +276,40 @@ export class QuizzDataHandler {
           console.log(err.message);
           onerror(err.message);
         });
+    } else {
+      onerror(`Couldn't close quiz, missing quiz id.`);
+    }
+  }
+
+  public static selectingNewQuestion(
+    onerror: (msg: string) => void = () => {},
+    onsuccess: () => void = () => {},
+  ) {
+    if (this.quizId) {
+      QuizzWebsocketAPI.changeGameState(
+        this.quizId,
+        GameStates.selectQuestion,
+        onsuccess,
+      );
+
+      // QuizzWebsocketAPI.closeQuestion(this.quizId, onsuccess);
+    } else {
+      onerror(`Couldn't close quiz, missing quiz id.`);
+    }
+  }
+
+  public static closeQuestion(
+    onerror: (msg: string) => void = () => {},
+    onsuccess: () => void = () => {},
+  ) {
+    if (this.quizId) {
+      QuizzWebsocketAPI.changeGameState(
+        this.quizId,
+        GameStates.questionJudging,
+        onsuccess,
+      );
+
+      // QuizzWebsocketAPI.closeQuestion(this.quizId, onsuccess);
     } else {
       onerror(`Couldn't close quiz, missing quiz id.`);
     }
@@ -281,16 +360,18 @@ export class QuizzDataHandler {
   }
 
   public static saveAnswer(
+    roundNr: number,
+    questionId: string,
     answer: string,
     onerror: (error: string) => void,
-    onsuccess: () => void,
+    onsuccess: (answer: any) => void,
   ) {
     if (this.quizId && this.teamId) {
       const quizId = this.quizId,
         teamId = this.teamId;
-      QuizzDataAPI.saveAnswer(quizId, teamId, answer)
-        .then(() => {
-          QuizzWebsocketAPI.sendAnswer(quizId, teamId, onsuccess);
+      QuizzDataAPI.saveAnswer(quizId, teamId, roundNr, questionId, answer)
+        .then((answer) => {
+          QuizzWebsocketAPI.sendAnswer(quizId, answer, onsuccess);
         })
         .catch((err: Error) => {
           console.log('Saving answer failed.');
@@ -303,16 +384,17 @@ export class QuizzDataHandler {
   }
 
   public static updateAnswer(
+    answerId: string,
     answer: string,
     onerror: (error: string) => void,
-    onsuccess: () => void,
+    onsuccess: (answer: any) => void,
   ) {
     if (this.quizId && this.teamId) {
       const quizId = this.quizId,
         teamId = this.teamId;
-      QuizzDataAPI.updateAnswer(quizId, teamId, answer)
-        .then(() => {
-          QuizzWebsocketAPI.sendAnswer(quizId, teamId, onsuccess);
+      QuizzDataAPI.updateAnswer(answerId, answer)
+        .then((answer) => {
+          QuizzWebsocketAPI.sendAnswer(quizId, answer, onsuccess);
         })
         .catch((err: Error) => {
           console.log('Updating answer failed.');
@@ -325,18 +407,48 @@ export class QuizzDataHandler {
   }
 
   public static getAnswer(
-    teamId: string,
+    answerId: string,
     onerror: (error: string) => void,
     onsuccess: (answer: string) => void,
   ) {
     if (this.quizId) {
       const quizId = this.quizId;
-      QuizzDataAPI.getAnswer(quizId, teamId)
+      QuizzDataAPI.getAnswer(answerId)
         .then((answer: any) => {
           onsuccess(answer);
         })
         .catch((err: Error) => {
           console.log('Getting answer failed.');
+          console.log(err.message);
+          onerror(err.message);
+        });
+    } else {
+      onerror('No quizId or teamId set.');
+    }
+  }
+
+  public static setAnswerCorrectness(
+    teamId: string,
+    answerId: string,
+    correct: boolean,
+    onerror: (error: string) => void,
+    onsuccess: () => void,
+  ) {
+    if (this.quizId) {
+      const quizId = this.quizId;
+      QuizzDataAPI.setAnswerCorrectness(answerId, correct)
+        .then((answer) => {
+          QuizzWebsocketAPI.notifyTeamAnswerCorrectness(
+            quizId,
+            {
+              teamId: teamId,
+              answer: answer,
+            },
+            onsuccess,
+          );
+        })
+        .catch((err: Error) => {
+          console.log('Setting answer correctness failed.');
           console.log(err.message);
           onerror(err.message);
         });
@@ -367,6 +479,10 @@ export class QuizzDataHandler {
 
   public static onAnswer(cb: (teamId: string) => void) {
     this.onAnswerCb = cb;
+  }
+
+  public static onAnswerJudged(cb: (answer: any) => void) {
+    this.onAnswerJudgedCb = cb;
   }
 
   // TODO: Catch errors that may arise.

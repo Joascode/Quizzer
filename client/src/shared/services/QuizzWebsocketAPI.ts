@@ -15,6 +15,7 @@ export enum WSActions {
   onDrasticError = 'onDrasticError',
   gameStateChanged = 'gameStateChanged',
   questionAnswered = 'questionAnswered',
+  answerJudged = 'answerJudged',
 }
 
 interface OnMessageFunc {
@@ -51,7 +52,7 @@ export class QuizzWebsocketAPI {
   ) {
     try {
       this.ws = new WebSocket(url);
-      this.ws.onopen = async event => {
+      this.ws.onopen = async (event) => {
         if (this.ws) {
           onConnectCb({
             type: 'connected',
@@ -64,7 +65,7 @@ export class QuizzWebsocketAPI {
           });
         }
       };
-      this.ws.onclose = event => {
+      this.ws.onclose = (event) => {
         onCloseCb(event);
       };
     } catch (error) {
@@ -193,8 +194,8 @@ export class QuizzWebsocketAPI {
 
   public static sendAnswer(
     quizId: string,
-    teamId: string,
-    onsuccess: () => void = () => {},
+    answer: any,
+    onsuccess: (answer: any) => void = () => {},
   ) {
     if (this.ws) {
       try {
@@ -203,9 +204,52 @@ export class QuizzWebsocketAPI {
             WSActions.questionAnswered,
             quizId,
             {
-              teamId: teamId,
+              answerId: answer._id,
             },
           ),
+        );
+        onsuccess(answer);
+      } catch (err) {
+        console.log(err.message);
+        throw err;
+      }
+    } else {
+      throw new Error('No websocket connection available');
+    }
+  }
+
+  public static notifyTeamAnswerCorrectness(
+    quizId: string,
+    data: { teamId: string; answer: {} },
+    onsuccess: () => void = () => {},
+  ) {
+    if (this.ws) {
+      try {
+        this.ws.send(
+          this.createRoomMessageStringified(
+            WSActions.answerJudged,
+            quizId,
+            data,
+          ),
+        );
+        onsuccess();
+      } catch (err) {
+        console.log(err.message);
+        throw err;
+      }
+    } else {
+      throw new Error('No websocket connection available');
+    }
+  }
+
+  public static closeQuestion(
+    quizId: string,
+    onsuccess: () => void = () => {},
+  ) {
+    if (this.ws) {
+      try {
+        this.ws.send(
+          this.createRoomMessageStringified(WSActions.closeQuestion, quizId),
         );
         onsuccess();
       } catch (err) {
@@ -219,7 +263,7 @@ export class QuizzWebsocketAPI {
 
   public static onMessage(onmessageCb: OnMessageFunc) {
     if (this.ws) {
-      this.ws.onmessage = event => {
+      this.ws.onmessage = (event) => {
         const data = JSON.parse(event.data);
         console.log('New message');
         console.log(data);
@@ -234,7 +278,7 @@ export class QuizzWebsocketAPI {
 
   public static onDisconnect(cb: () => void) {
     if (this.ws) {
-      this.ws.onclose = event => {
+      this.ws.onclose = (event) => {
         console.log('Websocket disconnected');
         cb();
       };

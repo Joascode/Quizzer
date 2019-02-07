@@ -14,6 +14,7 @@ import { load } from './utils/loadMongoDb';
 import MongoAPI from './MongoAPI';
 import { websocketAPI } from './WebsocketAPI';
 import vragen from '../vragen.json';
+import QuizService from './utils/QuizService';
 
 const app = express();
 const port = 8080;
@@ -42,11 +43,6 @@ app.use((req, res, next) => {
 
 http.createServer(app).listen(port, () => console.log(`Example app listening on port ${port}!`));
 websocketAPI();
-// app.listen(port, () => console.log(`Example app listening on port ${port}!`));
-
-// if (process.argv[2] === 'resetdb') {
-//   load(vragen);
-// }
 
 app.get('/resetdb', () => {
   load(vragen);
@@ -272,7 +268,7 @@ app.post(
     try {
       const answer = await api.saveAnswer(
         req.params.quizId,
-        req.params.roundId,
+        req.params.roundNr,
         req.params.questionId,
         req.params.teamId,
         req.body.answer
@@ -289,6 +285,54 @@ app.post('/answer/:id', async (req, res) => {
   try {
     const answer = await api.updateAnswer(req.params.id, req.body.answer);
     res.status(200).json(answer);
+  } catch (err) {
+    handleError(res, err.message, 404);
+  }
+});
+
+app.post('/answer/:answerId/correct/:correct', async (req, res) => {
+  try {
+    const answer = await api.setAnswerCorrectness(req.params.answerId, req.params.correct);
+    res.status(200).json(answer);
+  } catch (err) {
+    handleError(res, err.message, 404);
+  }
+});
+
+app.get('/quiz/:quizId/round/:roundNr/answers', async (req, res) => {
+  try {
+    const roundAnswers = await api.getAnswersOfTeamsForRound(req.params.quizId, req.params.roundNr);
+    res.status(200).json(roundAnswers);
+  } catch (err) {
+    handleError(res, err.message, 404);
+  }
+});
+
+app.get('/quiz/:quizId/round/:roundNr/scores', async (req, res) => {
+  try {
+    const roundAnswers = await api.getAnswersOfTeamsForRound(req.params.quizId, req.params.roundNr);
+    const calculatedScores = QuizService.calculateScores(roundAnswers);
+    console.log('Calculated scores');
+    console.log(calculatedScores);
+    res.status(200).json(calculatedScores);
+  } catch (err) {
+    handleError(res, err.message, 404);
+  }
+});
+
+app.get('/quiz/:quizId/scores', async (req, res) => {
+  try {
+    // const teams = await api.saveTeamScores(req.params.quizId, req.body.teams);
+    // res.status(200).json(teams);
+  } catch (err) {
+    handleError(res, err.message, 404);
+  }
+});
+
+app.post('/quiz/:quizId/scores', async (req, res) => {
+  try {
+    const teams = await api.saveTeamScores(req.params.quizId, req.body.teams);
+    res.status(200).json(teams);
   } catch (err) {
     handleError(res, err.message, 404);
   }

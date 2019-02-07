@@ -7,8 +7,13 @@ import { Question } from './Question';
 import { QuizzDataHandler } from '../../shared/services/QuizzDataHandler';
 import { Redirect } from 'react-router';
 import Button from 'reactstrap/lib/Button';
-import { GameStates } from '../../quizzmaster/components/HostGame';
+import {
+  GameStates,
+  QuestionModel,
+} from '../../quizzmaster/components/HostGame';
 import { ChangeTeamName } from './ChangeTeamName';
+import { QuestionJudging } from './QuestionJudging';
+import { EndOfRound } from './EndOfRound';
 
 class GameState extends GameStates {
   static readonly showRooms = 'showRooms';
@@ -25,6 +30,10 @@ enum ReducerActionTypes {
   nameClash,
   changeTeamName,
   questionSelected,
+  saveAnswer,
+  answerJudged,
+  questionReceived,
+  addScores,
 }
 
 interface GameProps {
@@ -33,8 +42,9 @@ interface GameProps {
   onDisconnect: (reason: string) => void;
 }
 
-interface TeamWithId extends Team {
+export interface TeamWithId extends Team {
   _id: string;
+  score: number;
 }
 
 export interface GameInfoModel {
@@ -44,9 +54,21 @@ export interface GameInfoModel {
   currentQuestion?: {
     _id: string;
     question: string;
+    answer: string;
     category: string;
   };
   teams: TeamWithId[];
+  answer?: AnswerModel;
+}
+
+export interface AnswerModel {
+  _id: string;
+  teamId: string;
+  questionId: string;
+  answer: string;
+  correct: boolean;
+  _version: number;
+  judged: boolean;
 }
 
 export interface ReducerModel {
@@ -75,7 +97,6 @@ function wsReducer(state: ReducerModel, action: ReducerActions) {
         quiz: {
           ...state.quiz,
           name: action.payload.quiz.name,
-          round: state.quiz.round,
           teams: action.payload.quiz.teams,
           _id: action.payload.quiz._id,
         },
@@ -139,11 +160,68 @@ function wsReducer(state: ReducerModel, action: ReducerActions) {
           ...state.quiz,
           currentQuestion: {
             _id: action.payload,
+            answer: 'No question set yet.',
             question: 'No question set yet.',
             category: 'No question set yet.',
           },
         },
         gameState: GameState.questionTime,
+      };
+    }
+    case ReducerActionTypes.questionReceived: {
+      return {
+        ...state,
+        quiz: {
+          ...state.quiz,
+          currentQuestion: action.payload,
+        },
+        gameState: GameState.questionTime,
+      };
+    }
+    case ReducerActionTypes.saveAnswer: {
+      return {
+        ...state,
+        quiz: {
+          ...state.quiz,
+          answer: {
+            ...action.payload,
+            judged: false,
+          },
+        },
+      };
+    }
+    case ReducerActionTypes.answerJudged: {
+      console.log('Own team judged?');
+      console.log(action.payload.teamId === state.ownTeam._id);
+      return action.payload.teamId === state.ownTeam._id
+        ? {
+            ...state,
+            quiz: {
+              ...state.quiz,
+              answer: {
+                ...action.payload.answer,
+                judged: true,
+              },
+            },
+          }
+        : state;
+    }
+    case ReducerActionTypes.addScores: {
+      const teams = state.quiz.teams.map((team) => {
+        const teamRoundScore = action.payload.find(
+          (score: any) => score.teamId === team._id,
+        );
+        if (teamRoundScore) {
+          team.score += teamRoundScore.score;
+        }
+        return team;
+      });
+      return {
+        ...state,
+        quiz: {
+          ...state.quiz,
+          teams: teams,
+        },
       };
     }
     case ReducerActionTypes.criticalError: {
@@ -184,11 +262,13 @@ export const TeamGame: React.FunctionComponent<GameProps> = (props) => {
         name: '',
         round: 1,
         teams: [],
+        answer: undefined,
       },
       ownTeam: {
         _id: '',
         name: props.team.name,
         members: props.team.members,
+        score: 0,
       },
       gameState: GameState.preparingQuiz,
       error: '',
@@ -278,6 +358,17 @@ export const TeamGame: React.FunctionComponent<GameProps> = (props) => {
             dispatch({
               type: ReducerActionTypes.questionSelected,
               payload: questionId,
+            });
+          }
+        });
+        QuizzDataHandler.onAnswerJudged((answer) => {
+          console.log('Answer judged');
+          console.log(answer);
+          if (!unmounted) {
+            console.log('Answer judged is for this team.');
+            dispatch({
+              type: ReducerActionTypes.answerJudged,
+              payload: answer,
             });
           }
         });
@@ -377,11 +468,27 @@ export const TeamGame: React.FunctionComponent<GameProps> = (props) => {
     }
   };
 
+  const updateQuestion = (question: QuestionModel) => {
+    dispatch({
+      type: ReducerActionTypes.questionReceived,
+      payload: question,
+    });
+  };
+
   const sendAnswer = (questionId: string, answer: string) => {
     QuizzDataHandler.saveAnswer(
+      state.quiz.round,
+      questionId,
       answer,
-      (err) => console.log('Something happened when saving the answer.'),
-      () => {
+      (err) => {
+        console.log('Something happened when saving the answer.');
+        console.log(err);
+      },
+      (answer) => {
+        dispatch({
+          type: ReducerActionTypes.saveAnswer,
+          payload: answer,
+        });
         console.log('Successfully saved an answer.');
       },
     );
@@ -389,14 +496,32 @@ export const TeamGame: React.FunctionComponent<GameProps> = (props) => {
   };
 
   const updateAnswer = (questionId: string, answer: string) => {
-    QuizzDataHandler.updateAnswer(
-      answer,
-      (err) => console.log('Something happened when saving the answer.'),
-      () => {
-        console.log('Successfully saved an answer.');
-      },
-    );
-    console.log(answer);
+    if (state.quiz.answer) {
+      QuizzDataHandler.updateAnswer(
+        state.quiz.answer._id,
+        answer,
+        (err) => console.log('Something happened when saving the answer.'),
+        (answer) => {
+          dispatch({
+            type: ReducerActionTypes.saveAnswer,
+            payload: answer,
+          });
+          console.log('Successfully saved an answer.');
+        },
+      );
+      console.log(answer);
+    } else {
+      console.log('No answer._id available for updating the answer.');
+    }
+  };
+
+  const addRoundScoreToTotalScore = (
+    scores: [{ teamId: string; totalCorrectAnswers: number; score: number }],
+  ) => {
+    dispatch({
+      type: ReducerActionTypes.addScores,
+      payload: scores,
+    });
   };
 
   {
@@ -431,6 +556,7 @@ export const TeamGame: React.FunctionComponent<GameProps> = (props) => {
       case GameState.questionTime:
         return (
           <Question
+            questionReceived={(question) => updateQuestion(question)}
             question={state.quiz.currentQuestion}
             sendAnswer={(questionId, answer) => sendAnswer(questionId, answer)}
             sendUpdate={(questionId, answer) =>
@@ -438,6 +564,28 @@ export const TeamGame: React.FunctionComponent<GameProps> = (props) => {
             }
           />
         );
+      case GameState.questionJudging:
+        if (!state.quiz.currentQuestion || !state.quiz.answer) {
+          return <div>No question or teamanswer available.</div>;
+        } else {
+          return (
+            <QuestionJudging
+              question={state.quiz.currentQuestion!}
+              teamAnswer={state.quiz.answer!}
+            />
+          );
+        }
+      case GameState.closeRound:
+        return (
+          <EndOfRound
+            teams={state.quiz.teams}
+            ownTeam={state.ownTeam}
+            roundNr={state.quiz.round}
+            addRoundScoreToScore={(scores) => addRoundScoreToTotalScore(scores)}
+          />
+        );
+      case GameState.closeGame:
+        return <div>Closing the game.</div>;
       default:
         return <p>404 GameState not found. Please return to Room Selection.</p>;
     }

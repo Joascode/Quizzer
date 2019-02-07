@@ -1,6 +1,6 @@
 import { Schema } from 'mongoose';
 import RoundSchema from './RoundSchema';
-import { TeamSchema } from './TeamSchema';
+import TeamSchema from './TeamSchema';
 
 // TODO: Add validation https://mongoosejs.com/docs/validation.html
 export default new Schema({

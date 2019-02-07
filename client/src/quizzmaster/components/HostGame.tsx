@@ -15,6 +15,8 @@ import { PrepareRound } from './PrepareRound';
 import { SelectQuestion } from './SelectQuestion';
 import { QuestionAnswering } from './QuestionAnswering';
 import { QuestionJudging } from './QuestionJudging';
+import { CloseRound } from './CloseRound';
+import { stat } from 'fs';
 
 interface HostGameProps {
   quiz: QuizModel;
@@ -51,11 +53,16 @@ export interface TeamModel {
   name: string;
   members: string[];
   answer: {
+    _id: string;
+    teamId: string;
+    questionId: string;
     value: string;
     correct: boolean;
     version: number;
+    judged: boolean;
   };
   score: number;
+  roundScore: number;
 }
 
 export interface CategoryModel {
@@ -121,6 +128,7 @@ enum ReducerActionTypes {
   endQuiz,
   decideAnswer,
   prepareRound,
+  roundScores,
 }
 
 function wsReducer(state: ReducerModel, action: ReducerActions) {
@@ -151,8 +159,10 @@ function wsReducer(state: ReducerModel, action: ReducerActions) {
           value: '',
           correct: false,
           version: 1,
+          judged: false,
         },
         score: 0,
+        roundScore: 0,
       });
       return {
         ...state,
@@ -187,6 +197,13 @@ function wsReducer(state: ReducerModel, action: ReducerActions) {
     case ReducerActionTypes.prepareRound:
       return {
         ...state,
+        quiz: {
+          ...state.quiz,
+          round: {
+            nr: state.quiz.round.nr + 1,
+            questions: [],
+          },
+        },
         gameState: GameStates.prepareRound,
       };
     case ReducerActionTypes.startRound:
@@ -220,9 +237,9 @@ function wsReducer(state: ReducerModel, action: ReducerActions) {
       // TODO: Check for versionnumber to see if old answer was arrived later than new answer.
       if (team) {
         team.answer = {
+          ...action.payload,
           value: action.payload.answer,
-          version: action.payload.version,
-          correct: action.payload.correct,
+          judged: false,
         };
       }
       return {
@@ -258,11 +275,31 @@ function wsReducer(state: ReducerModel, action: ReducerActions) {
         quiz: {
           ...state.quiz,
           teams: state.quiz.teams.map((team) => {
-            if (team._id === action.payload) {
-              team.answer.correct = !team.answer.correct;
+            if (team._id === action.payload.teamId) {
+              team.answer.correct = action.payload.correct;
+              team.answer.judged = true;
             }
             return team;
           }),
+        },
+      };
+    }
+    case ReducerActionTypes.roundScores: {
+      const teams = state.quiz.teams.map((team) => {
+        const teamScore = action.payload.find(
+          (score: any) => score.teamId === team._id,
+        );
+        if (teamScore) {
+          team.roundScore = teamScore.score;
+        }
+        return team;
+      });
+
+      return {
+        ...state,
+        quiz: {
+          ...state.quiz,
+          teams: teams,
         },
       };
     }
@@ -333,10 +370,10 @@ export const HostGame: FunctionComponent<HostGameProps> = (props) => {
           dispatch({ type: ReducerActionTypes.teamLeft, payload: id });
         }
       });
-      QuizzDataHandler.onAnswer((teamId) => {
+      QuizzDataHandler.onAnswer((answerId) => {
         console.log('On team answer response');
-        console.log(teamId);
-        getTeamAnswer(teamId);
+        console.log(answerId);
+        getTeamAnswer(answerId);
       });
       // TODO: Create Data Handler for stop hosting, so it does not count as a disconnect.
       QuizzDataHandler.onDisconnect(() => {
@@ -460,9 +497,9 @@ export const HostGame: FunctionComponent<HostGameProps> = (props) => {
     );
   };
 
-  const getTeamAnswer = (teamId: string) => {
+  const getTeamAnswer = (answerId: string) => {
     QuizzDataHandler.getAnswer(
-      teamId,
+      answerId,
       (err) => console.log(err),
       (answer) => {
         console.log(answer);
@@ -480,38 +517,80 @@ export const HostGame: FunctionComponent<HostGameProps> = (props) => {
 
   const closeQuestion = () => {
     console.log('Closed a question.');
-    dispatch({
-      type: ReducerActionTypes.closeQuestion,
-      payload: null,
-    });
+    QuizzDataHandler.closeQuestion(
+      (err) => console.log(err),
+      () => {
+        dispatch({
+          type: ReducerActionTypes.closeQuestion,
+          payload: null,
+        });
+      },
+    );
   };
 
   const nextQuestion = () => {
     // TODO: Send teamId's of teams that gave correct answer to the backend to update their score.
-    console.log('Next question!');
-    dispatch({
-      type: ReducerActionTypes.selectQuestion,
-      payload: null,
-    });
+    QuizzDataHandler.selectingNewQuestion(
+      (err) => console.log(err),
+      () => {
+        console.log('Next question!');
+        dispatch({
+          type: ReducerActionTypes.selectQuestion,
+          payload: null,
+        });
+      },
+    );
   };
 
   const endRound = () => {
     // TODO: Send teamId's of teams that gave correct answer to the backend to update their score.
     // TODO: After receiving correct saved, send message to teams to retrieve the scores to show end of round results and therefor ending the round.
     // TODO: After sending the message, end the round.
-    console.log('Ended the round.');
-    dispatch({
-      type: ReducerActionTypes.endRound,
-      payload: null,
-    });
+    QuizzDataHandler.getTeamsRoundScores(
+      state.quiz.round.nr,
+      (err: string) => console.log(err),
+      (
+        scores: [
+          { teamId: string; totalCorrectAnswers: number; score: number }
+        ],
+      ) => {
+        dispatch({
+          type: ReducerActionTypes.roundScores,
+          payload: scores,
+        });
+        // setTeamRoundScore(scores);
+      },
+    );
+    QuizzDataHandler.endRound(
+      (err) => console.log(err),
+      () => {
+        console.log('Ended the round.');
+        dispatch({
+          type: ReducerActionTypes.endRound,
+          payload: null,
+        });
+      },
+    );
   };
 
-  const setAnswerCorrectness = (teamId: string) => {
+  const setAnswerCorrectness = (
+    teamId: string,
+    answerId: string,
+    correct: boolean,
+  ) => {
     console.log(`Setting answer correctness: ${teamId}`);
-    dispatch({
-      type: ReducerActionTypes.decideAnswer,
-      payload: teamId,
-    });
+    QuizzDataHandler.setAnswerCorrectness(
+      teamId,
+      answerId,
+      correct,
+      (err) => console.log(err),
+      () => {
+        dispatch({
+          type: ReducerActionTypes.decideAnswer,
+          payload: { teamId, correct },
+        });
+      },
+    );
   };
 
   const startRound = () => {
@@ -519,6 +598,10 @@ export const HostGame: FunctionComponent<HostGameProps> = (props) => {
       type: ReducerActionTypes.prepareRound,
       payload: null,
     });
+  };
+
+  const stopQuiz = () => {
+    console.log('Stop the quiz!');
   };
 
   // TODO: This is a harsh way to handle errors. Check for the ability to resend a message when something on the websocket happened for example.
@@ -595,19 +678,24 @@ export const HostGame: FunctionComponent<HostGameProps> = (props) => {
           }
           endRound={() => endRound()}
           nextQuestion={() => nextQuestion()}
-          setIncorrect={(teamId) => setAnswerCorrectness(teamId)}
-          setCorrect={(teamId) => setAnswerCorrectness(teamId)}
+          setIncorrect={(teamId, answerId) =>
+            setAnswerCorrectness(teamId, answerId, false)
+          }
+          setCorrect={(teamId, answerId) =>
+            setAnswerCorrectness(teamId, answerId, true)
+          }
         />
       );
     // // TODO: Decide when to show team stats, like scores and such.
-    // case GameStates.closeRound:
-    //   return (
-    //     <CloseRound
-    //       teams={state.quiz.teams}
-    //       continuePlaying={() => dispatch(GameStates.prepareRound)}
-    //       stopPlaying={() => stopQuiz()}
-    //     />
-    //   );
+    case GameStates.closeRound:
+      return (
+        <CloseRound
+          roundNr={state.quiz.round.nr}
+          teams={state.quiz.teams}
+          continuePlaying={() => startRound()}
+          stopPlaying={() => stopQuiz()}
+        />
+      );
     case GameStates.closeGame:
       return <CloseGame teams={state.quiz.teams} close={() => closeGame()} />;
     default:
