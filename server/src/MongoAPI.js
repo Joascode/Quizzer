@@ -399,34 +399,82 @@ export default () => {
       }
     },
 
-    saveTeamScores: async (quizId, teamScores) => {
+    getTotalTeamScores: async quizId => {
+      try {
+        const teamScores = await Quiz.findById(quizId, { _id: 0, teams: 1 });
+        if (teamScores) {
+          return teamScores;
+        }
+        throw new Error(`No team scores found for given parameters: quizId: ${quizId}`);
+      } catch (err) {
+        throw err;
+      }
+    },
+
+    getTotalTeamsScoreAndRoundScore: async (quizId, roundNr) => {
+      try {
+        const quiz = await Quiz.findOne(
+          { _id: quizId, 'rounds.number': roundNr },
+          { _id: 0, teams: 1, 'rounds.$': 1 }
+        );
+        console.log(quiz);
+        const matchRound = quiz.rounds.find(round => {
+          return round.number === parseInt(roundNr, 10);
+        });
+        console.log(matchRound);
+        if (matchRound) {
+          console.log(matchRound);
+          return {
+            teams: quiz.teams,
+            teamScores: matchRound.teamScores
+          };
+        }
+        throw new Error(
+          `No team scores found for given parameters: quizId: ${quizId}, roundNr: ${roundNr}`
+        );
+      } catch (err) {
+        console.log(err.message);
+        throw err;
+      }
+    },
+
+    saveTeamScores: async (quizId, roundNr, teamScores) => {
       try {
         const teams = await Quiz.findById(quizId, { teams: 1 });
         if (teams) {
-          const teamsWithNewScores = teams.map(team => {
-            const newTeam = { ...team };
+          const teamsWithNewScores = teams.teams.map(team => {
+            const newTeam = {
+              _id: team._id,
+              name: team.name,
+              members: team.members,
+              score: team.score
+            };
             teamScores.forEach(teamScore => {
-              if (teamScore._id === team._id) {
+              if (teamScore.teamId === team._id.toString()) {
                 newTeam.score += teamScore.score;
               }
             });
             return newTeam;
           });
-          const updatedteams = await Quiz.findOneAndUpdate(
+          await Quiz.findOneAndUpdate(
             {
-              _id: quizId
+              _id: quizId,
+              'rounds.number': roundNr
             },
             {
               $set: {
-                teams: teamsWithNewScores
+                teams: teamsWithNewScores,
+                'rounds.$[round].teamScores': teamScores
               }
             },
             {
-              teams: 1,
-              new: true
+              arrayFilters: [{ 'round.number': roundNr }]
             }
           );
-          return updatedteams;
+          return {
+            teams: teamsWithNewScores,
+            teamScores
+          };
         }
         throw new Error(`No teams found for given quizId: ${quizId}`);
       } catch (err) {

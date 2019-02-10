@@ -20,17 +20,36 @@ export const CloseRound: FunctionComponent<CloseRoundProps> = (props) => {
   // useEffect(() => {
 
   // })
+  const [scoreAdded, isScoreAdded] = useState(false);
+  const [timer, setTimer] = useState<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+    setTimer(
+      setTimeout(() => {
+        if (mounted) isScoreAdded(true);
+      }, 2000),
+    );
+    return () => {
+      if (timer) clearTimeout(timer);
+      mounted = false;
+    };
+  }, [props.roundNr]);
 
   return (
     <Fragment>
-      <p>End of round: {props.roundNr}</p>
+      <p>End of Round: {props.roundNr}</p>
       <ListGroup>
         {props.teams.map((team) => {
           return (
             <ListGroupItem>
               <p>{team.name}</p>
-              <p>{team.score}</p>
-              <p>+ {team.roundScore}</p>
+              {!scoreAdded ? (
+                <p>{team.score - team.roundScore}</p>
+              ) : (
+                <p>{team.score}</p>
+              )}
+              {!scoreAdded ? <p>+ {team.roundScore}</p> : null}
             </ListGroupItem>
           );
         })}

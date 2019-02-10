@@ -2,7 +2,7 @@ import { QuizzWebsocketAPI, WSActions } from './QuizzWebsocketAPI';
 import { QuizzDataAPI } from './QuizzDataAPI';
 import { QuizModel } from '../../quizzmaster/components/Host';
 import { Team } from '../../quizzteam/components/Team';
-import { GameInfoModel } from '../../quizzteam/components/TeamGame';
+import { GameInfoModel, TeamWithId } from '../../quizzteam/components/TeamGame';
 import {
   GameStates,
   CategoryModel,
@@ -18,6 +18,8 @@ export class QuizzDataHandler {
   private static onQuestionSelectedCb?: (questionId: string) => void;
   private static onAnswerCb?: (teamId: string) => void;
   private static onAnswerJudgedCb?: (answer: any) => void;
+  private static onNewRoundCb?: (roundNr: number) => void;
+  private static onPokeCb?: (poke: { teamId: string; poke: string }) => void;
   private static quizId?: string;
   private static teamId?: string;
 
@@ -63,10 +65,21 @@ export class QuizzDataHandler {
             ? this.onAnswerCb(message.data.answerId)
             : console.log('No callback set for answer given.');
           break;
+        case WSActions.poked:
+          this.onPokeCb
+            ? this.onPokeCb(message.data)
+            : console.log('No callback set for poked');
+          break;
         case WSActions.answerJudged:
           this.onAnswerJudgedCb
             ? this.onAnswerJudgedCb(message.data)
             : console.log('No callback set for answer judged.');
+          break;
+        case WSActions.newRound:
+          this.onNewRoundCb
+            ? this.onNewRoundCb(message.data.roundNr)
+            : console.log('No callback set for new round.');
+          break;
       }
     });
 
@@ -202,11 +215,7 @@ export class QuizzDataHandler {
       const quizId = this.quizId;
       QuizzDataAPI.startRound(quizId, roundNr, categoryIds)
         .then((round) => {
-          QuizzWebsocketAPI.changeGameState(
-            quizId,
-            GameStates.selectQuestion.toString(),
-            onsuccess,
-          );
+          QuizzWebsocketAPI.startRound(quizId, roundNr, onsuccess);
         })
         .catch((err) => {
           console.log(err.message);
@@ -217,7 +226,7 @@ export class QuizzDataHandler {
     }
   }
 
-  public static getTeamsRoundScores(
+  public static calculateTeamScores(
     roundNr: number,
     onerror: (msg: string) => void = () => {},
     onsuccess: (
@@ -225,13 +234,41 @@ export class QuizzDataHandler {
     ) => void = () => {},
   ) {
     if (this.quizId) {
-      QuizzDataAPI.fetchTeamsRoundScores(this.quizId, roundNr)
+      QuizzDataAPI.saveTeamsRoundScores(this.quizId, roundNr)
         .then(
           (
             scores: [
               { teamId: string; totalCorrectAnswers: number; score: number }
             ],
           ) => {
+            onsuccess(scores);
+          },
+        )
+        .catch((err: Error) => onerror(err.message));
+    } else {
+      onerror(`Couldn't close quiz, missing quiz id.`);
+    }
+  }
+
+  public static getTeamsRoundScores(
+    roundNr: number,
+    onerror: (msg: string) => void = () => {},
+    onsuccess: (scores: {
+      teams: TeamWithId[];
+      teamScores: [
+        { teamId: string; totalCorrectAnswers: number; score: number }
+      ];
+    }) => void = () => {},
+  ) {
+    if (this.quizId) {
+      QuizzDataAPI.fetchTeamsRoundScores(this.quizId, roundNr)
+        .then(
+          (scores: {
+            teams: TeamWithId[];
+            teamScores: [
+              { teamId: string; totalCorrectAnswers: number; score: number }
+            ];
+          }) => {
             onsuccess(scores);
           },
         )
@@ -427,6 +464,19 @@ export class QuizzDataHandler {
     }
   }
 
+  public static pokeTeam(
+    teamId: string,
+    poke: string,
+    onerror: (error: string) => void,
+    onsuccess: () => void,
+  ) {
+    if (this.quizId) {
+      QuizzWebsocketAPI.poke(this.quizId, teamId, poke, onsuccess);
+    } else {
+      onerror('No quizId or teamId set.');
+    }
+  }
+
   public static setAnswerCorrectness(
     teamId: string,
     answerId: string,
@@ -483,6 +533,14 @@ export class QuizzDataHandler {
 
   public static onAnswerJudged(cb: (answer: any) => void) {
     this.onAnswerJudgedCb = cb;
+  }
+
+  public static onNewRound(cb: (roundNr: number) => void) {
+    this.onNewRoundCb = cb;
+  }
+
+  public static onPoke(cb: (poke: { teamId: string; poke: string }) => void) {
+    this.onPokeCb = cb;
   }
 
   // TODO: Catch errors that may arise.

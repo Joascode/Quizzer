@@ -56,7 +56,7 @@ export interface JoinGameFunc {
 }
 
 // TODO: Change the password handling in the modal. Create separate FunctionComponent for it.
-export const ShowRooms: React.FunctionComponent<ShowRoomsProps> = props => {
+export const ShowRooms: React.FunctionComponent<ShowRoomsProps> = (props) => {
   const [rooms, setRooms] = useState<RoomModel[]>([]);
   const [password, setPassword] = useState('');
   const [modalState, dispatchModal] = useReducer(reducer, {
@@ -80,18 +80,11 @@ export const ShowRooms: React.FunctionComponent<ShowRoomsProps> = props => {
   const validatePassword = (id?: string) => {
     setPasswordState(PasswordStates.validating);
     if (id != null) {
-      QuizzDataAPI.checkPass(id, password).then(valid => {
+      // TODO: Check on backend if quiz is still open to join before telling the pass is correct.
+      QuizzDataAPI.checkPass(id, password).then((valid) => {
         console.log(valid);
         if (valid) {
           setPasswordState(PasswordStates.correct);
-          // QuizzDataAPI.joinQuiz(id, props.team).then(joined => {
-          //   // TODO: Check for teamname collision
-          //   if (joined) {
-          //     props.joinGame(id);
-          //   } else {
-          //     console.log('Something bad happened when joining a quiz.');
-          //   }
-          // });
           props.joinGame(id);
         } else {
           setPasswordState(PasswordStates.incorrect);
@@ -101,6 +94,13 @@ export const ShowRooms: React.FunctionComponent<ShowRoomsProps> = props => {
         }
       });
     }
+  };
+
+  const joinQuiz = (quizId: string) => {
+    // TODO: Try to join quiz. If it's open and without pass, immideatly join.
+    // If pass is required, ask for pass.
+    // If quiz is already closed, tell that it is.
+    openModal(quizId);
   };
 
   const openModal = (id: string) => {
@@ -117,7 +117,7 @@ export const ShowRooms: React.FunctionComponent<ShowRoomsProps> = props => {
       {rooms.map((room, index) => (
         <div key={index}>
           <p>{room.name}</p>
-          <Button onClick={() => openModal(room._id)}>Join</Button>
+          <Button onClick={() => joinQuiz(room._id)}>Join</Button>
         </div>
       ))}
 
@@ -136,7 +136,7 @@ export const ShowRooms: React.FunctionComponent<ShowRoomsProps> = props => {
         <ModalBody>
           <input
             value={password}
-            onChange={event => setPassword(event.target.value)}
+            onChange={(event) => setPassword(event.target.value)}
           />
           <PasswordStatus state={passwordState} />
         </ModalBody>
@@ -163,7 +163,9 @@ interface PasswordStatusProps {
 
 //TODO: Bouw om naar Context
 // TODO: Work through containers, in which de context api makes connection with functions like these. Like a wrapper.
-const PasswordStatus: React.FunctionComponent<PasswordStatusProps> = props => {
+const PasswordStatus: React.FunctionComponent<PasswordStatusProps> = (
+  props,
+) => {
   switch (props.state) {
     case PasswordStates.unvalidated:
       return null;

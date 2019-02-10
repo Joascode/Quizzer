@@ -310,11 +310,25 @@ app.get('/quiz/:quizId/round/:roundNr/answers', async (req, res) => {
 
 app.get('/quiz/:quizId/round/:roundNr/scores', async (req, res) => {
   try {
+    // TODO: Change this to a DB call to retrieve teamScores and roundScores
+    const roundAnswers = await api.getTotalTeamsScoreAndRoundScore(
+      req.params.quizId,
+      req.params.roundNr
+    );
+    console.log('Fetched scores');
+    console.log(roundAnswers);
+    res.status(200).json(roundAnswers);
+  } catch (err) {
+    handleError(res, err.message, 404);
+  }
+});
+
+app.post('/quiz/:quizId/round/:roundNr/scores', async (req, res) => {
+  try {
     const roundAnswers = await api.getAnswersOfTeamsForRound(req.params.quizId, req.params.roundNr);
     const calculatedScores = QuizService.calculateScores(roundAnswers);
-    console.log('Calculated scores');
-    console.log(calculatedScores);
-    res.status(200).json(calculatedScores);
+    const teams = await api.saveTeamScores(req.params.quizId, req.params.roundNr, calculatedScores);
+    res.status(200).json(teams);
   } catch (err) {
     handleError(res, err.message, 404);
   }
@@ -324,15 +338,8 @@ app.get('/quiz/:quizId/scores', async (req, res) => {
   try {
     // const teams = await api.saveTeamScores(req.params.quizId, req.body.teams);
     // res.status(200).json(teams);
-  } catch (err) {
-    handleError(res, err.message, 404);
-  }
-});
-
-app.post('/quiz/:quizId/scores', async (req, res) => {
-  try {
-    const teams = await api.saveTeamScores(req.params.quizId, req.body.teams);
-    res.status(200).json(teams);
+    const teamScores = await api.getTotalTeamScores(req.params.quizId);
+    res.status(200).json(teamScores);
   } catch (err) {
     handleError(res, err.message, 404);
   }

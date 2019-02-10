@@ -27,7 +27,8 @@ const calculateScoresOnSorted = sortedAnswerCount => {
     if (teamCount.totalCorrectAnswers === 0) {
       scores.push(decideScoreOnPosition(scoreTeam, 4));
     } else if (teamCount.totalCorrectAnswers === previousCount) {
-      scores.push(decideScoreOnPosition(scoreTeam, position - 1));
+      position -= 1;
+      scores.push(decideScoreOnPosition(scoreTeam, position));
     } else {
       scores.push(decideScoreOnPosition(scoreTeam, position));
     }
@@ -43,14 +44,14 @@ export default {
     if (!roundAnswers) throw new Error('No answers to use to calculate the scores.');
     const teams = new Set();
     roundAnswers.forEach(answer => {
-      teams.add(answer.teamId);
+      teams.add(answer.teamId.toString());
     });
 
     const teamsCorrectAnswers = [];
     teams.forEach(team => {
       let correctAnswerCount = 0;
       roundAnswers.forEach(answer => {
-        if (answer.teamId === team) {
+        if (answer.teamId.toString() === team) {
           if (answer.correct) correctAnswerCount += 1;
         }
       });
@@ -63,8 +64,6 @@ export default {
     const sorted = teamsCorrectAnswers.sort(
       (a, b) => b.totalCorrectAnswers - a.totalCorrectAnswers
     );
-    console.log('Sorted answers count');
-    console.log(sorted);
     return calculateScoresOnSorted(sorted);
   }
 };

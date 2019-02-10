@@ -285,6 +285,20 @@ export class QuizzDataAPI {
     });
   }
 
+  static async saveTeamsRoundScores(quizId: string, roundNr: number) {
+    return fetch(`${this.serverUrl}/quiz/${quizId}/round/${roundNr}/scores`, {
+      method: 'POST',
+    }).then((data) => {
+      console.log(data);
+      if (data.status === 200) {
+        return data.json();
+      }
+      throw new Error(
+        `Unable to save answer: ${data.json().then((error) => error.errorMsg)}`,
+      );
+    });
+  }
+
   static async fetchTeamsRoundScores(quizId: string, roundNr: number) {
     return fetch(`${this.serverUrl}/quiz/${quizId}/round/${roundNr}/scores`, {
       method: 'GET',

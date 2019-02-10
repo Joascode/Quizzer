@@ -14,6 +14,8 @@ import {
 import { ChangeTeamName } from './ChangeTeamName';
 import { QuestionJudging } from './QuestionJudging';
 import { EndOfRound } from './EndOfRound';
+import { RSA_PKCS1_OAEP_PADDING } from 'constants';
+import { stat } from 'fs';
 
 class GameState extends GameStates {
   static readonly showRooms = 'showRooms';
@@ -34,6 +36,8 @@ enum ReducerActionTypes {
   answerJudged,
   questionReceived,
   addScores,
+  newRound,
+  poked,
 }
 
 interface GameProps {
@@ -59,6 +63,7 @@ export interface GameInfoModel {
   };
   teams: TeamWithId[];
   answer?: AnswerModel;
+  poke: string;
 }
 
 export interface AnswerModel {
@@ -147,6 +152,16 @@ function wsReducer(state: ReducerModel, action: ReducerActions) {
         };
       }
     }
+    case ReducerActionTypes.newRound: {
+      return {
+        ...state,
+        quiz: {
+          ...state.quiz,
+          round: action.payload,
+        },
+        gameState: GameState.selectQuestion,
+      };
+    }
     case ReducerActionTypes.gameStateChange: {
       return {
         ...state,
@@ -164,6 +179,7 @@ function wsReducer(state: ReducerModel, action: ReducerActions) {
             question: 'No question set yet.',
             category: 'No question set yet.',
           },
+          poke: '',
         },
         gameState: GameState.questionTime,
       };
@@ -187,6 +203,19 @@ function wsReducer(state: ReducerModel, action: ReducerActions) {
             ...action.payload,
             judged: false,
           },
+          poke: '',
+        },
+      };
+    }
+    case ReducerActionTypes.poked: {
+      if (action.payload.teamId !== state.ownTeam._id) {
+        return state;
+      }
+      return {
+        ...state,
+        quiz: {
+          ...state.quiz,
+          poke: action.payload.poke,
         },
       };
     }
@@ -208,11 +237,11 @@ function wsReducer(state: ReducerModel, action: ReducerActions) {
     }
     case ReducerActionTypes.addScores: {
       const teams = state.quiz.teams.map((team) => {
-        const teamRoundScore = action.payload.find(
-          (score: any) => score.teamId === team._id,
+        const teamScore = action.payload.find(
+          (score: any) => score._id === team._id,
         );
-        if (teamRoundScore) {
-          team.score += teamRoundScore.score;
+        if (teamScore) {
+          team.score = teamScore.score;
         }
         return team;
       });
@@ -263,6 +292,7 @@ export const TeamGame: React.FunctionComponent<GameProps> = (props) => {
         round: 1,
         teams: [],
         answer: undefined,
+        poke: '',
       },
       ownTeam: {
         _id: '',
@@ -361,6 +391,16 @@ export const TeamGame: React.FunctionComponent<GameProps> = (props) => {
             });
           }
         });
+        QuizzDataHandler.onPoke((poke) => {
+          console.log('New poke');
+          console.log(poke);
+          if (!unmounted) {
+            dispatch({
+              type: ReducerActionTypes.poked,
+              payload: poke,
+            });
+          }
+        });
         QuizzDataHandler.onAnswerJudged((answer) => {
           console.log('Answer judged');
           console.log(answer);
@@ -369,6 +409,17 @@ export const TeamGame: React.FunctionComponent<GameProps> = (props) => {
             dispatch({
               type: ReducerActionTypes.answerJudged,
               payload: answer,
+            });
+          }
+        });
+        QuizzDataHandler.onNewRound((roundNr) => {
+          console.log('Next round');
+          console.log(roundNr);
+          if (!unmounted) {
+            console.log('A new round is started.');
+            dispatch({
+              type: ReducerActionTypes.newRound,
+              payload: roundNr,
             });
           }
         });
@@ -476,27 +527,35 @@ export const TeamGame: React.FunctionComponent<GameProps> = (props) => {
   };
 
   const sendAnswer = (questionId: string, answer: string) => {
-    QuizzDataHandler.saveAnswer(
-      state.quiz.round,
-      questionId,
-      answer,
-      (err) => {
-        console.log('Something happened when saving the answer.');
-        console.log(err);
-      },
-      (answer) => {
-        dispatch({
-          type: ReducerActionTypes.saveAnswer,
-          payload: answer,
-        });
-        console.log('Successfully saved an answer.');
-      },
-    );
-    console.log(answer);
+    if (answer !== '') {
+      QuizzDataHandler.saveAnswer(
+        state.quiz.round,
+        questionId,
+        answer,
+        (err) => {
+          console.log('Something happened when saving the answer.');
+          console.log(err);
+        },
+        (answer) => {
+          dispatch({
+            type: ReducerActionTypes.saveAnswer,
+            payload: answer,
+          });
+          console.log('Successfully saved an answer.');
+        },
+      );
+      console.log(answer);
+    } else {
+      console.log('Given answer is empty.');
+    }
   };
 
   const updateAnswer = (questionId: string, answer: string) => {
-    if (state.quiz.answer) {
+    if (
+      state.quiz.answer &&
+      answer !== '' &&
+      answer !== state.quiz.answer.answer
+    ) {
       QuizzDataHandler.updateAnswer(
         state.quiz.answer._id,
         answer,
@@ -511,13 +570,13 @@ export const TeamGame: React.FunctionComponent<GameProps> = (props) => {
       );
       console.log(answer);
     } else {
-      console.log('No answer._id available for updating the answer.');
+      console.log(
+        'No answer._id available for updating the answer or given answer is equal to previous answer or empty.',
+      );
     }
   };
 
-  const addRoundScoreToTotalScore = (
-    scores: [{ teamId: string; totalCorrectAnswers: number; score: number }],
-  ) => {
+  const addRoundScoreToTotalScore = (scores: TeamWithId[]) => {
     dispatch({
       type: ReducerActionTypes.addScores,
       payload: scores,
@@ -558,6 +617,7 @@ export const TeamGame: React.FunctionComponent<GameProps> = (props) => {
           <Question
             questionReceived={(question) => updateQuestion(question)}
             question={state.quiz.currentQuestion}
+            poke={state.quiz.poke}
             sendAnswer={(questionId, answer) => sendAnswer(questionId, answer)}
             sendUpdate={(questionId, answer) =>
               updateAnswer(questionId, answer)

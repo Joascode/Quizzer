@@ -16,6 +16,7 @@ export enum WSActions {
   gameStateChanged = 'gameStateChanged',
   questionAnswered = 'questionAnswered',
   answerJudged = 'answerJudged',
+  poked = 'poked',
 }
 
 interface OnMessageFunc {
@@ -250,6 +251,52 @@ export class QuizzWebsocketAPI {
       try {
         this.ws.send(
           this.createRoomMessageStringified(WSActions.closeQuestion, quizId),
+        );
+        onsuccess();
+      } catch (err) {
+        console.log(err.message);
+        throw err;
+      }
+    } else {
+      throw new Error('No websocket connection available');
+    }
+  }
+
+  public static startRound(
+    quizId: string,
+    roundNr: number,
+    onsuccess: () => void = () => {},
+  ) {
+    if (this.ws) {
+      try {
+        this.ws.send(
+          this.createRoomMessageStringified(WSActions.newRound, quizId, {
+            roundNr: roundNr,
+          }),
+        );
+        onsuccess();
+      } catch (err) {
+        console.log(err.message);
+        throw err;
+      }
+    } else {
+      throw new Error('No websocket connection available');
+    }
+  }
+
+  public static poke(
+    quizId: string,
+    teamId: string,
+    poke: string,
+    onsuccess: () => void = () => {},
+  ) {
+    if (this.ws) {
+      try {
+        this.ws.send(
+          this.createRoomMessageStringified(WSActions.poked, quizId, {
+            teamId: teamId,
+            poke: poke,
+          }),
         );
         onsuccess();
       } catch (err) {

@@ -286,11 +286,12 @@ function wsReducer(state: ReducerModel, action: ReducerActions) {
     }
     case ReducerActionTypes.roundScores: {
       const teams = state.quiz.teams.map((team) => {
-        const teamScore = action.payload.find(
+        const teamScore = action.payload.teamScores.find(
           (score: any) => score.teamId === team._id,
         );
         if (teamScore) {
           team.roundScore = teamScore.score;
+          team.score += teamScore.score;
         }
         return team;
       });
@@ -511,8 +512,19 @@ export const HostGame: FunctionComponent<HostGameProps> = (props) => {
     );
   };
 
-  const annoyTeam = (annoyance: any, teamId: string) => {
+  // TODO: Make this compatible with emoji's and text
+  // https://github.com/missive/emoji-mart
+  // https://medium.com/@seanmcp/%EF%B8%8F-how-to-use-emojis-in-react-d23bbf608bf7
+  const annoyTeam = (annoyance: string, teamId: string) => {
     console.log(`Annoyed a team: ${teamId}, with ${annoyance}`);
+    QuizzDataHandler.pokeTeam(
+      teamId,
+      annoyance,
+      (err) => console.log(err),
+      () => {
+        console.log(`Successfully annoyed a team: ${teamId}`);
+      },
+    );
   };
 
   const closeQuestion = () => {
@@ -546,7 +558,7 @@ export const HostGame: FunctionComponent<HostGameProps> = (props) => {
     // TODO: Send teamId's of teams that gave correct answer to the backend to update their score.
     // TODO: After receiving correct saved, send message to teams to retrieve the scores to show end of round results and therefor ending the round.
     // TODO: After sending the message, end the round.
-    QuizzDataHandler.getTeamsRoundScores(
+    QuizzDataHandler.calculateTeamScores(
       state.quiz.round.nr,
       (err: string) => console.log(err),
       (
@@ -558,19 +570,35 @@ export const HostGame: FunctionComponent<HostGameProps> = (props) => {
           type: ReducerActionTypes.roundScores,
           payload: scores,
         });
-        // setTeamRoundScore(scores);
+
+        // Scores for the round calculated and saved into the DB. Notify teams that the round is being closed.
+        QuizzDataHandler.endRound(
+          (err) => console.log(err),
+          () => {
+            console.log('Ended the round.');
+            dispatch({
+              type: ReducerActionTypes.endRound,
+              payload: null,
+            });
+          },
+        );
       },
     );
-    QuizzDataHandler.endRound(
-      (err) => console.log(err),
-      () => {
-        console.log('Ended the round.');
-        dispatch({
-          type: ReducerActionTypes.endRound,
-          payload: null,
-        });
-      },
-    );
+    // QuizzDataHandler.getTeamsRoundScores(
+    //   state.quiz.round.nr,
+    //   (err: string) => console.log(err),
+    //   (
+    //     scores: [
+    //       { teamId: string; totalCorrectAnswers: number; score: number }
+    //     ],
+    //   ) => {
+    //     dispatch({
+    //       type: ReducerActionTypes.roundScores,
+    //       payload: scores,
+    //     });
+    //     // setTeamRoundScore(scores);
+    //   },
+    // );
   };
 
   const setAnswerCorrectness = (
@@ -579,6 +607,7 @@ export const HostGame: FunctionComponent<HostGameProps> = (props) => {
     correct: boolean,
   ) => {
     console.log(`Setting answer correctness: ${teamId}`);
+    console.log(`Setting answer correctness: ${answerId}`);
     QuizzDataHandler.setAnswerCorrectness(
       teamId,
       answerId,
@@ -600,6 +629,7 @@ export const HostGame: FunctionComponent<HostGameProps> = (props) => {
     });
   };
 
+  // TODO: Finish this function to close the quiz and show end results. No functions yet to notify others that the quiz has come to its end.
   const stopQuiz = () => {
     console.log('Stop the quiz!');
   };

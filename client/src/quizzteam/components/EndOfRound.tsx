@@ -9,9 +9,7 @@ interface EndOfRoundProps {
   teams: TeamWithId[];
   ownTeam: TeamWithId;
   roundNr: number;
-  addRoundScoreToScore: (
-    scores: [{ teamId: string; totalCorrectAnswers: number; score: number }],
-  ) => void;
+  addRoundScoreToScore: (scores: TeamWithId[]) => void;
 }
 
 export const EndOfRound: FunctionComponent<EndOfRoundProps> = (props) => {
@@ -26,16 +24,19 @@ export const EndOfRound: FunctionComponent<EndOfRoundProps> = (props) => {
     QuizzDataHandler.getTeamsRoundScores(
       props.roundNr,
       (err: string) => console.log(err),
-      (
-        scores: [
+      (scores: {
+        teams: TeamWithId[];
+        teamScores: [
           { teamId: string; totalCorrectAnswers: number; score: number }
-        ],
-      ) => {
+        ];
+      }) => {
         if (mounted) {
-          setTeamsRoundScore(scores);
+          console.log('Scores fetched');
+          console.log(scores);
+          setTeamsRoundScore(scores.teamScores);
           setTimer(
             setTimeout(() => {
-              props.addRoundScoreToScore(scores);
+              props.addRoundScoreToScore(scores.teams);
               isScoreAdded(true);
             }, 2000),
           );
@@ -66,7 +67,7 @@ export const EndOfRound: FunctionComponent<EndOfRoundProps> = (props) => {
 
   return (
     <Fragment>
-      <p>End of Round {props.roundNr}</p>
+      <p>End of Round: {props.roundNr}</p>
       <ListGroup>
         {props.teams.map((team) => {
           return (

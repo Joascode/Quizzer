@@ -9,6 +9,15 @@ export default new Schema({
   //   question: { type: Schema.Types.ObjectId, ref: 'Question' },
   //   answers: { type: [AnswerSchema], default: [] },
   // },
+  teamScores: {
+    type: [
+      {
+        teamId: Schema.Types.ObjectId,
+        score: Number
+      }
+    ],
+    default: []
+  },
   questions: {
     type: [
       {

@@ -3,6 +3,10 @@ import { TeamModel, QuestionModel } from './HostGame';
 import ListGroup from 'reactstrap/lib/ListGroup';
 import ListGroupItem from 'reactstrap/lib/ListGroupItem';
 import Button from 'reactstrap/lib/Button';
+import DropdownToggle from 'reactstrap/lib/DropdownToggle';
+import Dropdown from 'reactstrap/lib/Dropdown';
+import DropdownMenu from 'reactstrap/lib/DropdownMenu';
+import DropdownItem from 'reactstrap/lib/DropdownItem';
 
 interface QuestionAnsweringProps {
   teams: TeamModel[];
@@ -18,8 +22,8 @@ export const QuestionAnswering: FunctionComponent<QuestionAnsweringProps> = (
   if (!props.question) {
     return <div>No question was set.</div>;
   }
-
   const [timeToClose, setTimeToClose] = useState(5);
+  const [dropdownOpen, isDropdownOpen] = useState<string>('');
 
   useEffect(() => {
     let mounted = true;
@@ -32,8 +36,17 @@ export const QuestionAnswering: FunctionComponent<QuestionAnsweringProps> = (
     };
   });
 
+  const pokeTeam = (poke: string, teamId: string) => {
+    props.annoyTeam(poke, teamId);
+    isDropdownOpen('');
+  };
+
   const closeQuestion = () => {
     props.closeQuestion();
+  };
+
+  const toggle = () => {
+    // isDropdownOpen(!dropdownOpen);
   };
 
   return (
@@ -48,9 +61,29 @@ export const QuestionAnswering: FunctionComponent<QuestionAnsweringProps> = (
           return (
             <ListGroupItem key={index}>
               {team.name} {team.answer.value}{' '}
-              <Button onClick={() => props.annoyTeam('Annoy', team._id)}>
+              <Dropdown isOpen={dropdownOpen === team._id} toggle={() => {}}>
+                <DropdownToggle onClick={() => isDropdownOpen(team._id)} caret>
+                  Poke
+                </DropdownToggle>
+                <DropdownMenu>
+                  <DropdownItem onClick={() => pokeTeam('Really?', team._id)}>
+                    Really?
+                  </DropdownItem>
+                  <DropdownItem
+                    onClick={() => pokeTeam('Nice typo..', team._id)}
+                  >
+                    Nice typo..
+                  </DropdownItem>
+                  <DropdownItem
+                    onClick={() => pokeTeam('Guess again', team._id)}
+                  >
+                    Guess again
+                  </DropdownItem>
+                </DropdownMenu>
+              </Dropdown>
+              {/* <Button onClick={() => props.annoyTeam('Annoy', team._id)}>
                 Annoy
-              </Button>
+              </Button> */}
             </ListGroupItem>
           );
         })}

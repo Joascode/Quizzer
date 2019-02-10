@@ -10,6 +10,7 @@ interface QuestionProps {
     question: string;
     category: string;
   };
+  poke: string;
   questionReceived: (question: any) => void;
   sendAnswer: (questionId: string, answer: string) => void;
   sendUpdate: (questionId: string, answer: string) => void;
@@ -27,8 +28,10 @@ export const Question: React.FunctionComponent<QuestionProps> = (props) => {
     question: string;
     category: string;
   }>(props.question);
-  const [previousAnswers, addAnswer] = useState<string[]>([]);
+  const [previousAnswers, addToPrreviousAnswers] = useState<string[]>([]);
   const [answered, setAnswered] = useState(false);
+  const [lastGivenAnswer, setLastGivenAnswer] = useState('');
+  const [answerError, setAnswerError] = useState('');
 
   useEffect(() => {
     let mounted = true;
@@ -55,14 +58,28 @@ export const Question: React.FunctionComponent<QuestionProps> = (props) => {
   }, [props.question._id]);
 
   const sendAnswer = () => {
-    addAnswer([...previousAnswers, answer]);
-    props.sendAnswer(question._id, answer);
-    setAnswered(true);
+    if (answer !== '') {
+      setAnswerError('');
+      addToPrreviousAnswers([...previousAnswers, answer]);
+      setLastGivenAnswer(answer);
+      props.sendAnswer(question._id, answer);
+      setAnswered(true);
+    } else {
+      setAnswerError('Answer should not be empty.');
+    }
   };
 
   const sendUpdate = () => {
-    addAnswer([...previousAnswers, answer]);
-    props.sendUpdate(question._id, answer);
+    if (answer !== '' && answer !== lastGivenAnswer) {
+      setAnswerError('');
+      addToPrreviousAnswers([...previousAnswers, answer]);
+      setLastGivenAnswer(answer);
+      props.sendUpdate(question._id, answer);
+    } else if (answer === '') {
+      setAnswerError('Answer should not be empty.');
+    } else if (answer === lastGivenAnswer) {
+      setAnswerError('New answer should not equal last answer');
+    }
   };
 
   return (
@@ -73,6 +90,8 @@ export const Question: React.FunctionComponent<QuestionProps> = (props) => {
         value={answer}
         onChange={(event) => setAnswer(event.target.value)}
       />
+      {answerError ? <p style={{ color: 'red' }}>{answerError}</p> : null}
+      {props.poke ? <p>{props.poke}</p> : null}
       {answered ? (
         <Button onClick={() => sendUpdate()}>Update</Button>
       ) : (
