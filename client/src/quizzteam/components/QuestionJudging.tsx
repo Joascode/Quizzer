@@ -7,7 +7,7 @@ export const QuestionJudging: FunctionComponent<{
     question: string;
     answer: string;
   };
-  teamAnswer: AnswerModel;
+  teamAnswer?: AnswerModel;
 }> = (props) => {
   if (!props.question) {
     return <div>No question was set.</div>;
@@ -17,27 +17,47 @@ export const QuestionJudging: FunctionComponent<{
     console.log('Team is ready for next question!');
   };
 
-  return (
-    <Fragment>
-      <p>{props.question.question}</p>
-      {props.teamAnswer.judged && !props.teamAnswer.correct ? (
+  const renderAnswerGiven = (answer: AnswerModel) => {
+    return (
+      <Fragment>
+        <p>{props.question.question}</p>
+        <p>Your answer:</p>
+        <p>{answer.answer}</p>
+        {answer.judged && answer.correct ? <p>{'Correct! :D'}</p> : null}
+        {answer.judged && !answer.correct ? <p>{'Incorrect :('}</p> : null}
+
+        {answer.judged && !answer.correct ? (
+          <p>Answer should've been: {props.question.answer}</p>
+        ) : null}
+        <Button
+          color="primary"
+          block
+          onClick={() => notifyQuizMasterForNextQuestion()}
+        >
+          Next question
+        </Button>
+      </Fragment>
+    );
+  };
+
+  const renderNoAnswerGiven = () => {
+    return (
+      <Fragment>
+        <p>{props.question.question}</p>
+        <p>It seems you didn't send an answer.</p>
         <p>Answer should've been: {props.question.answer}</p>
-      ) : null}
-      <p>Your answer:</p>
-      <p>{props.teamAnswer.answer}</p>
-      {props.teamAnswer.judged && props.teamAnswer.correct ? (
-        <p>{'Correct! :D'}</p>
-      ) : null}
-      {props.teamAnswer.judged && !props.teamAnswer.correct ? (
-        <p>{'Incorrect :('}</p>
-      ) : null}
-      <Button
-        color="primary"
-        block
-        onClick={() => notifyQuizMasterForNextQuestion()}
-      >
-        Next question
-      </Button>
-    </Fragment>
-  );
+        <Button
+          color="primary"
+          block
+          onClick={() => notifyQuizMasterForNextQuestion()}
+        >
+          Next question
+        </Button>
+      </Fragment>
+    );
+  };
+
+  return props.teamAnswer
+    ? renderAnswerGiven(props.teamAnswer)
+    : renderNoAnswerGiven();
 };

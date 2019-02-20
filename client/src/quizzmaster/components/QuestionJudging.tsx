@@ -85,10 +85,13 @@ export const QuestionJudging: FunctionComponent<QuestionAnsweringProps> = (
         {props.teams.map((team, index) => {
           return (
             <ListGroupItem key={index}>
-              {team.name} {team.answer.value}{' '}
-              {team.answer.judged
-                ? renderButtonsAfterJudgement(team)
-                : renderButtonsBeforeJudgement(team)}
+              {team.name}{' '}
+              {team.answer.value !== '' ? team.answer.value : 'No answer sent.'}{' '}
+              {team.answer.value !== ''
+                ? team.answer.judged
+                  ? renderButtonsAfterJudgement(team)
+                  : renderButtonsBeforeJudgement(team)
+                : null}
             </ListGroupItem>
           );
         })}

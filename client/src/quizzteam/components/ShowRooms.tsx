@@ -1,11 +1,14 @@
-import React, { useState, useReducer, useEffect } from 'react';
+import React, { useState, useReducer, useEffect, Fragment } from 'react';
 import { Button, Modal, ModalHeader, ModalBody, ModalFooter } from 'reactstrap';
 import { Team } from './Team';
 import { QuizzDataAPI } from '../../shared/services/QuizzDataAPI';
+import ListGroupItem from 'reactstrap/lib/ListGroupItem';
+import ListGroup from 'reactstrap/lib/ListGroup';
 
 interface RoomModel {
   _id: string;
   name: string;
+  hasPassword: boolean;
 }
 
 interface ModalModel {
@@ -43,16 +46,9 @@ const reducer = (modalState: ModalModel, action: ModalAction): ModalModel => {
 
 interface ShowRoomsProps {
   team: Team;
-  changeTeam: ChangeTeamFunc;
-  joinGame: JoinGameFunc;
-}
-
-export interface ChangeTeamFunc {
-  (): void;
-}
-
-export interface JoinGameFunc {
-  (id: string): void;
+  changeTeam: () => void;
+  joinGame: (id: string, password: string) => void;
+  leaveLobby: () => void;
 }
 
 // TODO: Change the password handling in the modal. Create separate FunctionComponent for it.
@@ -66,11 +62,14 @@ export const ShowRooms: React.FunctionComponent<ShowRoomsProps> = (props) => {
   const [passwordState, setPasswordState] = useState(
     PasswordStates.unvalidated,
   );
+  const [loading, setLoading] = useState(true);
 
   const fetchRooms = async () => {
+    setLoading(true);
     const data = await QuizzDataAPI.getQuizs();
     console.log(data);
     setRooms([...data]);
+    setLoading(false);
   };
 
   useEffect(() => {
@@ -85,7 +84,7 @@ export const ShowRooms: React.FunctionComponent<ShowRoomsProps> = (props) => {
         console.log(valid);
         if (valid) {
           setPasswordState(PasswordStates.correct);
-          props.joinGame(id);
+          props.joinGame(id, password);
         } else {
           setPasswordState(PasswordStates.incorrect);
           setTimeout(() => {
@@ -96,11 +95,20 @@ export const ShowRooms: React.FunctionComponent<ShowRoomsProps> = (props) => {
     }
   };
 
-  const joinQuiz = (quizId: string) => {
-    // TODO: Try to join quiz. If it's open and without pass, immideatly join.
-    // If pass is required, ask for pass.
-    // If quiz is already closed, tell that it is.
-    openModal(quizId);
+  const joinQuiz = (quizId: string, hasPassword: boolean) => {
+    if (hasPassword) {
+      openModal(quizId);
+    } else {
+      QuizzDataAPI.checkPass(quizId, '')
+        .then((valid) => {
+          if (valid) {
+            props.joinGame(quizId, password);
+          } else {
+            console.log('Failed to join quiz without password');
+          }
+        })
+        .catch((err) => console.log(err));
+    }
   };
 
   const openModal = (id: string) => {
@@ -112,23 +120,76 @@ export const ShowRooms: React.FunctionComponent<ShowRoomsProps> = (props) => {
   };
 
   return (
-    <div>
-      <h1>Select a game to join</h1>
-      {rooms.map((room, index) => (
-        <div key={index}>
-          <p>{room.name}</p>
-          <Button onClick={() => joinQuiz(room._id)}>Join</Button>
-        </div>
-      ))}
-
-      <div>
-        <p>{props.team.name}</p>
-        {props.team.members.map((member, index) => (
-          <p key={index}>{member}</p>
-        ))}
-        <Button onClick={() => props.changeTeam()}>Change Team?</Button>
+    <Fragment>
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'row',
+          justifyContent: 'space-between',
+        }}
+      >
+        <Button color="link" onClick={props.leaveLobby}>
+          {'< Leave Lobby'}
+        </Button>
+        <Button color="link" onClick={fetchRooms} disabled={loading}>
+          Refresh
+        </Button>
       </div>
-
+      <h1>Join a Quizz</h1>
+      {loading ? (
+        <p style={{ flex: '1 auto' }}>Fetching Quizz's..</p>
+      ) : rooms.length > 0 ? (
+        <ListGroup flush style={{ flex: '1 auto', overflowY: 'auto' }}>
+          {rooms.map((room, index) => (
+            <ListGroupItem
+              key={index}
+              style={{
+                display: 'flex',
+                flexFlow: 'row nowrap',
+                justifyContent: 'space-between',
+              }}
+            >
+              <p
+                title={room.name}
+                style={{
+                  flex: '2 auto',
+                  textOverflow: 'ellipsis',
+                  overflow: 'hidden',
+                  whiteSpace: 'nowrap',
+                  textAlign: 'left',
+                  margin: 'auto',
+                }}
+              >
+                {room.name}
+              </p>
+              <div
+                style={{
+                  display: 'flex',
+                  flexFlow: 'row nowrap',
+                  justifyContent: 'center',
+                }}
+              >
+                {room.hasPassword ? (
+                  <p style={{ margin: 'auto 10px' }}>locked</p>
+                ) : null}
+                <Button
+                  color="success"
+                  onClick={() => joinQuiz(room._id, room.hasPassword)}
+                >
+                  Join
+                </Button>
+              </div>
+            </ListGroupItem>
+          ))}
+        </ListGroup>
+      ) : (
+        <p style={{ flex: '1 auto' }}>No Quizz's available</p>
+      )}
+      <div>
+        <Button color="primary" block onClick={() => props.changeTeam()}>
+          Change Team?
+        </Button>
+      </div>
       <Modal isOpen={modalState.open} toggle={closeModal}>
         <ModalHeader toggle={closeModal}>
           Enter pass for {modalState.id}
@@ -152,8 +213,8 @@ export const ShowRooms: React.FunctionComponent<ShowRoomsProps> = (props) => {
             Cancel
           </Button>
         </ModalFooter>
-      </Modal>
-    </div>
+      </Modal>{' '}
+    </Fragment>
   );
 };
 

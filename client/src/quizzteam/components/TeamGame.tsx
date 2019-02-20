@@ -10,12 +10,12 @@ import Button from 'reactstrap/lib/Button';
 import {
   GameStates,
   QuestionModel,
+  TeamModel,
 } from '../../quizzmaster/components/HostGame';
 import { ChangeTeamName } from './ChangeTeamName';
 import { QuestionJudging } from './QuestionJudging';
 import { EndOfRound } from './EndOfRound';
-import { RSA_PKCS1_OAEP_PADDING } from 'constants';
-import { stat } from 'fs';
+import { StopGame } from '../../shared/components/StopGame';
 
 class GameState extends GameStates {
   static readonly showRooms = 'showRooms';
@@ -38,11 +38,13 @@ enum ReducerActionTypes {
   addScores,
   newRound,
   poked,
+  leaveQuiz,
 }
 
 interface GameProps {
   team: Team;
   gameId?: string;
+  password: string;
   onDisconnect: (reason: string) => void;
 }
 
@@ -61,7 +63,7 @@ export interface GameInfoModel {
     answer: string;
     category: string;
   };
-  teams: TeamWithId[];
+  teams: TeamModel[];
   answer?: AnswerModel;
   poke: string;
 }
@@ -253,6 +255,12 @@ function wsReducer(state: ReducerModel, action: ReducerActions) {
         },
       };
     }
+    case ReducerActionTypes.leaveQuiz: {
+      return {
+        ...state,
+        gameState: GameState.disconnect,
+      };
+    }
     case ReducerActionTypes.criticalError: {
       try {
         return {
@@ -313,6 +321,7 @@ export const TeamGame: React.FunctionComponent<GameProps> = (props) => {
         QuizzDataHandler.connect();
         QuizzDataHandler.joinQuiz(
           props.gameId,
+          props.password,
           props.team,
           (response, ownTeam) => {
             console.log('Joined quiz:');
@@ -471,6 +480,7 @@ export const TeamGame: React.FunctionComponent<GameProps> = (props) => {
 
     QuizzDataHandler.joinQuiz(
       state.quiz._id,
+      props.password,
       { name: name, members: props.team.members },
       (response, ownTeam) => {
         console.log('Joined quiz:');
@@ -625,13 +635,19 @@ export const TeamGame: React.FunctionComponent<GameProps> = (props) => {
           />
         );
       case GameState.questionJudging:
-        if (!state.quiz.currentQuestion || !state.quiz.answer) {
-          return <div>No question or teamanswer available.</div>;
+        if (!state.quiz.currentQuestion) {
+          return (
+            <div>
+              {
+                'Seems something went wrong checking for the current Question :('
+              }
+            </div>
+          );
         } else {
           return (
             <QuestionJudging
               question={state.quiz.currentQuestion!}
-              teamAnswer={state.quiz.answer!}
+              teamAnswer={state.quiz.answer}
             />
           );
         }
@@ -644,8 +660,15 @@ export const TeamGame: React.FunctionComponent<GameProps> = (props) => {
             addRoundScoreToScore={(scores) => addRoundScoreToTotalScore(scores)}
           />
         );
-      case GameState.closeGame:
-        return <div>Closing the game.</div>;
+      case GameState.stopQuiz:
+        return (
+          <StopGame
+            teams={state.quiz.teams}
+            close={() =>
+              dispatch({ type: ReducerActionTypes.leaveQuiz, payload: null })
+            }
+          />
+        );
       default:
         return <p>404 GameState not found. Please return to Room Selection.</p>;
     }

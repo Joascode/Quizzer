@@ -3,10 +3,11 @@ import React, {
   useState,
   useEffect,
   useReducer,
+  Fragment,
 } from 'react';
 import { QuizModel } from './Host';
 import { PrepareQuiz } from './PrepareQuiz';
-import { CloseGame } from './CloseGame';
+import { StopGame } from '../../shared/components/StopGame';
 import { QuizzDataHandler } from '../../shared/services/QuizzDataHandler';
 import { Redirect } from 'react-router';
 import { Link } from 'react-router-dom';
@@ -16,7 +17,10 @@ import { SelectQuestion } from './SelectQuestion';
 import { QuestionAnswering } from './QuestionAnswering';
 import { QuestionJudging } from './QuestionJudging';
 import { CloseRound } from './CloseRound';
-import { stat } from 'fs';
+import { QuizOverview } from './QuizOverview';
+import Container from 'reactstrap/lib/Container';
+import Row from 'reactstrap/lib/Row';
+import Col from 'reactstrap/lib/Col';
 
 interface HostGameProps {
   quiz: QuizModel;
@@ -28,6 +32,7 @@ interface GameDataModel {
   name: string;
   teams: TeamModel[];
   round: RoundModel;
+  quizStarted: boolean;
   maxNQuestionsPerRound: number;
   currentQuestion?: QuestionModel;
   selectedCategories: CategoryModel[];
@@ -84,6 +89,7 @@ export class GameStates {
   static readonly closeQuestion = 'closeQuestion';
   static readonly closeRound = 'closeRound';
   static readonly closeGame = 'closeGame';
+  static readonly stopQuiz = 'stopQuiz';
   static readonly disconnect = 'disconnect';
   static readonly loading = 'loading';
   static readonly questionJudging = 'questionJudging';
@@ -186,7 +192,11 @@ function wsReducer(state: ReducerModel, action: ReducerActions) {
     case ReducerActionTypes.startQuiz: {
       return {
         ...state,
-        gameState: action.payload,
+        quiz: {
+          ...state.quiz,
+          quizStarted: true,
+        },
+        gameState: GameStates.prepareRound,
       };
     }
     case ReducerActionTypes.newCategories:
@@ -225,6 +235,10 @@ function wsReducer(state: ReducerModel, action: ReducerActions) {
         ...state,
         quiz: {
           ...state.quiz,
+          round: {
+            ...state.quiz.round,
+            questions: [...state.quiz.round.questions, action.payload],
+          },
           currentQuestion: action.payload,
         },
         gameState: GameStates.questionTime,
@@ -251,16 +265,6 @@ function wsReducer(state: ReducerModel, action: ReducerActions) {
       if (state.quiz.currentQuestion) {
         return {
           ...state,
-          quiz: {
-            ...state.quiz,
-            round: {
-              ...state.quiz.round,
-              questions: [
-                ...state.quiz.round.questions,
-                state.quiz.currentQuestion,
-              ],
-            },
-          },
           gameState: GameStates.questionJudging,
         };
       } else {
@@ -310,6 +314,12 @@ function wsReducer(state: ReducerModel, action: ReducerActions) {
         gameState: GameStates.closeRound,
       };
     }
+    case ReducerActionTypes.endQuiz: {
+      return {
+        ...state,
+        gameState: GameStates.stopQuiz,
+      };
+    }
     default:
       // A reducer must always return a valid state.
       // Alternatively you can throw an error if an invalid action is dispatched.
@@ -325,6 +335,7 @@ export const HostGame: FunctionComponent<HostGameProps> = (props) => {
       quiz: {
         _id: '',
         name: props.quiz.name,
+        quizStarted: false,
         selectedCategories: [],
         currentQuestion: undefined,
         maxNQuestionsPerRound: props.quiz.maxNQuestions,
@@ -463,7 +474,7 @@ export const HostGame: FunctionComponent<HostGameProps> = (props) => {
       () => {
         dispatch({
           type: ReducerActionTypes.startQuiz,
-          payload: GameStates.prepareRound,
+          payload: null,
         });
       },
     );
@@ -631,6 +642,15 @@ export const HostGame: FunctionComponent<HostGameProps> = (props) => {
 
   // TODO: Finish this function to close the quiz and show end results. No functions yet to notify others that the quiz has come to its end.
   const stopQuiz = () => {
+    QuizzDataHandler.stopQuiz(
+      (err) => console.log(err),
+      () => {
+        dispatch({
+          type: ReducerActionTypes.endQuiz,
+          payload: null,
+        });
+      },
+    );
     console.log('Stop the quiz!');
   };
 
@@ -646,89 +666,130 @@ export const HostGame: FunctionComponent<HostGameProps> = (props) => {
     );
   }
 
-  switch (state.gameState) {
-    case GameStates.disconnect: {
-      return <Redirect to="/" />;
-    }
-    case GameStates.preparingQuiz:
-      return (
-        <div>
-          <Link to="/">
-            <Button color="warning" block>
-              Stop hosting
-            </Button>
-          </Link>
-          <PrepareQuiz
-            teams={state.quiz.teams}
-            addTeam={() =>
-              console.log('Add team.')
-            } /* TODO: Change to proper function. */
-            removeTeam={(team) => removeTeam(team)}
-            startQuiz={() => startQuiz()}
+  const renderViewBasedOnGameState = () => {
+    switch (state.gameState) {
+      case GameStates.disconnect: {
+        return <Redirect to="/" />;
+      }
+      case GameStates.preparingQuiz:
+        return (
+          <Fragment>
+            <Link to="/">
+              <Button color="danger" block>
+                Stop hosting
+              </Button>
+            </Link>
+            <PrepareQuiz
+              teams={state.quiz.teams}
+              addTeam={() =>
+                console.log('Add team.')
+              } /* TODO: Change to proper function. */
+              removeTeam={(team) => removeTeam(team)}
+              startQuiz={() => startQuiz()}
+            />
+          </Fragment>
+        );
+      case GameStates.prepareRound:
+        return (
+          <PrepareRound
+            categories={state.availableCategories}
+            setCategories={(categories: CategoryModel[]) =>
+              setCategories(categories)
+            }
           />
-        </div>
-      );
-    case GameStates.prepareRound:
-      return (
-        <PrepareRound
-          categories={state.availableCategories}
-          setCategories={(categories: CategoryModel[]) =>
-            setCategories(categories)
-          }
-        />
-      );
-    case GameStates.selectQuestion:
-      console.log(state.quiz);
-      return (
-        <SelectQuestion
-          unavailableQuestions={state.quiz.round.questions}
-          categories={state.quiz.selectedCategories}
-          selectQuestion={(question: QuestionModel) => setQuestion(question)}
-        />
-      );
-    case GameStates.questionTime:
-      return (
-        <QuestionAnswering
-          teams={state.quiz.teams}
-          question={state.quiz.currentQuestion}
-          annoyTeam={(annoyance: any, teamId: string) =>
-            annoyTeam(annoyance, teamId)
-          }
-          closeQuestion={() => closeQuestion()}
-        />
-      );
-    case GameStates.questionJudging:
-      return (
-        <QuestionJudging
-          teams={state.quiz.teams}
-          question={state.quiz.currentQuestion}
-          endOfRound={
-            state.quiz.round.questions.length >=
-            state.quiz.maxNQuestionsPerRound
-          }
-          endRound={() => endRound()}
-          nextQuestion={() => nextQuestion()}
-          setIncorrect={(teamId, answerId) =>
-            setAnswerCorrectness(teamId, answerId, false)
-          }
-          setCorrect={(teamId, answerId) =>
-            setAnswerCorrectness(teamId, answerId, true)
-          }
-        />
-      );
-    // // TODO: Decide when to show team stats, like scores and such.
-    case GameStates.closeRound:
-      return (
-        <CloseRound
-          roundNr={state.quiz.round.nr}
-          teams={state.quiz.teams}
-          continuePlaying={() => startRound()}
-          stopPlaying={() => stopQuiz()}
-        />
-      );
-    case GameStates.closeGame:
-      return <CloseGame teams={state.quiz.teams} close={() => closeGame()} />;
-    default:
-      return <p>Something went wrong, please retry to host a game.</p>;
+        );
+      case GameStates.selectQuestion:
+        console.log(state.quiz);
+        return (
+          <SelectQuestion
+            unavailableQuestions={state.quiz.round.questions}
+            categories={state.quiz.selectedCategories}
+            selectQuestion={(question: QuestionModel) => setQuestion(question)}
+          />
+        );
+      case GameStates.questionTime:
+        return (
+          <QuestionAnswering
+            teams={state.quiz.teams}
+            question={state.quiz.currentQuestion}
+            annoyTeam={(annoyance: any, teamId: string) =>
+              annoyTeam(annoyance, teamId)
+            }
+            closeQuestion={() => closeQuestion()}
+          />
+        );
+      case GameStates.questionJudging:
+        return (
+          <QuestionJudging
+            teams={state.quiz.teams}
+            question={state.quiz.currentQuestion}
+            endOfRound={
+              state.quiz.round.questions.length >=
+              state.quiz.maxNQuestionsPerRound
+            }
+            endRound={() => endRound()}
+            nextQuestion={() => nextQuestion()}
+            setIncorrect={(teamId, answerId) =>
+              setAnswerCorrectness(teamId, answerId, false)
+            }
+            setCorrect={(teamId, answerId) =>
+              setAnswerCorrectness(teamId, answerId, true)
+            }
+          />
+        );
+      // // TODO: Decide when to show team stats, like scores and such.
+      case GameStates.closeRound:
+        return (
+          <CloseRound
+            roundNr={state.quiz.round.nr}
+            teams={state.quiz.teams}
+            continuePlaying={() => startRound()}
+            stopPlaying={() => stopQuiz()}
+          />
+        );
+      case GameStates.stopQuiz:
+        return <StopGame teams={state.quiz.teams} close={() => closeGame()} />;
+      default:
+        return <p>Something went wrong, please retry to host a game.</p>;
+    }
+  };
+
+  if (!state.quiz.quizStarted) {
+    return (
+      <Container>
+        <Row>
+          <Col sm="12" md={{ size: 6, offset: 3 }}>
+            {renderViewBasedOnGameState()}
+          </Col>
+        </Row>
+      </Container>
+    );
+  } else {
+    return (
+      <Container>
+        <Row>
+          <Col
+            lg={{ size: 2 }}
+            md={{ size: 2 }}
+            style={{ borderRight: '1px solid darkgrey' }}
+          >
+            <QuizOverview
+              roundNr={state.quiz.round.nr}
+              categories={state.quiz.selectedCategories}
+              maxNQuestions={state.quiz.maxNQuestionsPerRound}
+              questions={state.quiz.round.questions}
+              teams={state.quiz.teams}
+            />
+          </Col>
+          <Col
+            lg={{ size: 8, offset: 1 }}
+            md={{ size: 8, offset: 1 }}
+            sm={{ size: 12 }}
+          >
+            {renderViewBasedOnGameState()}
+          </Col>
+        </Row>
+      </Container>
+    );
   }
 };

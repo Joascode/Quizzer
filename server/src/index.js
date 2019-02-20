@@ -79,8 +79,16 @@ app.get('/quiz', async (req, res) => {
 
 app.get('/quiz/open', async (req, res) => {
   try {
-    const quiz = await api.getOpenQuizs();
-    res.json(quiz);
+    const quizs = await api.getOpenQuizs();
+    const passWordCheckedQuizs = quizs.map(quiz => {
+      const hasPassword = quiz.password !== '';
+      return {
+        _id: quiz._id,
+        name: quiz.name,
+        hasPassword
+      };
+    });
+    res.json(passWordCheckedQuizs);
   } catch (err) {
     handleError(res, err.message, 404);
   }
@@ -164,7 +172,7 @@ app.delete('/quiz/:id/team/:teamId', async (req, res) => {
 
 app.post('/quiz/:id/team', async (req, res) => {
   try {
-    const quiz = await api.joinQuiz(req.params.id, req.body.team);
+    const quiz = await api.joinQuiz(req.params.id, req.body.password, req.body.team);
     console.log('Post Team data:');
     console.log(quiz);
     res.status(200).json(quiz);

@@ -8,25 +8,33 @@ import { Link } from 'react-router-dom';
 export class SelectRole extends Component {
   render() {
     return (
-      <div>
-        <Container>
-          <Row>
-            <Col sm="12" md={{ size: 6, offset: 3 }}>
-              <h1>Quizzer</h1>
-              <Link to="/host">
+      <Container>
+        <Row>
+          <Col sm="12" md={{ size: 6, offset: 3 }} lg={{ size: 4, offset: 4 }}>
+            <h1>Quizzer</h1>
+            <div
+              className="role-buttons-container"
+              style={{
+                flex: '1 auto',
+                display: 'flex',
+                justifyContent: 'center',
+                flexDirection: 'column',
+              }}
+            >
+              <Link style={{ margin: '10px 0px' }} to="/host">
                 <Button color="primary" block>
-                  Create
+                  Create Quizz
                 </Button>
               </Link>
-              <Link to="/team">
+              <Link style={{ margin: '10px 0px' }} to="/team">
                 <Button color="primary" block>
-                  Join
+                  Join Quizz
                 </Button>
               </Link>
-            </Col>
-          </Row>
-        </Container>
-      </div>
+            </div>
+          </Col>
+        </Row>
+      </Container>
     );
   }
 }

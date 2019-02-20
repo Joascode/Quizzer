@@ -105,11 +105,12 @@ export class QuizzDataHandler {
 
   public static joinQuiz(
     quizId: string,
+    password: string,
     team: Team,
     onsuccess: (data: GameInfoModel, joinedTeam: any) => void,
     onerror: (err: any) => void = () => {},
   ) {
-    QuizzDataAPI.joinQuiz(quizId, team)
+    QuizzDataAPI.joinQuiz(quizId, password, team)
       .then((response) => {
         console.log('Response after joining quiz.');
         console.log(response);
@@ -127,6 +128,17 @@ export class QuizzDataHandler {
         console.log('An error occured. ' + err.message);
         onerror(err);
       });
+  }
+
+  public static connectToQuiz(
+    quizId: string,
+    teamId: string,
+    onsuccess: () => void,
+    onerror: (err: any) => void = () => {},
+  ) {
+    QuizzWebsocketAPI.joinQuiz(quizId, teamId, () => {
+      onsuccess();
+    });
   }
 
   // TODO: Encapsulate with removing the team from db or set to left/removed in db.
@@ -504,6 +516,19 @@ export class QuizzDataHandler {
         });
     } else {
       onerror('No quizId or teamId set.');
+    }
+  }
+
+  public static stopQuiz(
+    onerror: (error: string) => void,
+    onsuccess: () => void,
+  ) {
+    if (this.quizId) {
+      QuizzWebsocketAPI.changeGameState(
+        this.quizId,
+        GameStates.stopQuiz,
+        onsuccess,
+      );
     }
   }
 

@@ -1,10 +1,16 @@
 import React, { FunctionComponent, useState } from 'react';
 import { CreateQuiz } from './CreateQuiz';
 import { HostGame } from './HostGame';
+import Container from 'reactstrap/lib/Container';
+import Row from 'reactstrap/lib/Row';
+import Col from 'reactstrap/lib/Col';
+import { Redirect } from 'react-router';
+import Button from 'reactstrap/lib/Button';
 
 enum QuizState {
   createQuiz,
   quizCreated,
+  returnToHome,
 }
 
 interface HostProps {
@@ -17,7 +23,7 @@ export interface QuizModel {
   password: string;
 }
 
-export const Host: FunctionComponent<HostProps> = props => {
+export const Host: FunctionComponent<HostProps> = (props) => {
   const [quizInfo, setQuizInfo] = useState<QuizModel>({
     name: '',
     maxNQuestions: 2,
@@ -32,24 +38,62 @@ export const Host: FunctionComponent<HostProps> = props => {
     });
     setQuizState(QuizState.quizCreated);
   };
+
+  const returnToHome = () => {
+    setQuizState(QuizState.returnToHome);
+  };
+
   switch (quizState) {
+    case QuizState.returnToHome: {
+      return <Redirect to="/" />;
+    }
     case QuizState.createQuiz:
       return (
-        <CreateQuiz
-          createQuiz={(name, nrQuestions, pass) =>
-            createQuiz(name, nrQuestions, pass)
-          }
-        />
+        <Container>
+          <Row>
+            <Col
+              sm="12"
+              md={{ size: 6, offset: 3 }}
+              lg={{ size: 4, offset: 4 }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
+                <Button color="link" onClick={returnToHome}>
+                  {'< Return'}
+                </Button>
+              </div>
+              <CreateQuiz
+                createQuiz={(name, nrQuestions, pass) =>
+                  createQuiz(name, nrQuestions, pass)
+                }
+              />
+            </Col>
+          </Row>
+        </Container>
       );
     case QuizState.quizCreated:
       return <HostGame onDisconnect={props.onError} quiz={quizInfo} />;
     default:
       return (
-        <CreateQuiz
-          createQuiz={(name, nrQuestions, pass) =>
-            createQuiz(name, nrQuestions, pass)
-          }
-        />
+        <Container>
+          <Row>
+            <Col
+              sm="12"
+              md={{ size: 6, offset: 3 }}
+              lg={{ size: 4, offset: 4 }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
+                <Button color="link" onClick={returnToHome}>
+                  {'< Return'}
+                </Button>
+              </div>
+              <CreateQuiz
+                createQuiz={(name, nrQuestions, pass) =>
+                  createQuiz(name, nrQuestions, pass)
+                }
+              />
+            </Col>
+          </Row>
+        </Container>
       );
   }
 };

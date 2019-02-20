@@ -3,7 +3,10 @@ import { CreateTeam } from './CreateTeam';
 import { ShowRooms } from './ShowRooms';
 import { TeamGame } from './TeamGame';
 import Button from 'reactstrap/lib/Button';
-import { Link } from 'react-router-dom';
+import { Link, Redirect } from 'react-router-dom';
+import Container from 'reactstrap/lib/Container';
+import Row from 'reactstrap/lib/Row';
+import Col from 'reactstrap/lib/Col';
 
 export interface Team {
   name: string;
@@ -29,6 +32,7 @@ enum TeamGameState {
   createTeam,
   teamCreated,
   roomJoined,
+  returnToHome,
 }
 
 interface TeamProps {
@@ -46,6 +50,7 @@ export const Team: FunctionComponent<TeamProps> = (props) => {
   const [team, setTeam] = useState<Team>({ name: '', members: [] });
   const [teamState, setTeamState] = useState(TeamGameState.createTeam);
   const [gameId, setGameId] = useState<string | undefined>(undefined);
+  const [password, setPassword] = useState<string>('');
 
   const createTeam = (team: Team) => {
     setTeam({ ...team });
@@ -56,30 +61,95 @@ export const Team: FunctionComponent<TeamProps> = (props) => {
     setTeamState(TeamGameState.createTeam);
   };
 
-  const joinGame = (id: string) => {
+  const joinGame = (id: string, password: string) => {
     setGameId(id);
+    setPassword(password);
     setTeamState(TeamGameState.roomJoined);
   };
 
+  const returnToHome = () => {
+    setTeamState(TeamGameState.returnToHome);
+  };
+
   switch (teamState) {
+    case TeamGameState.returnToHome: {
+      return <Redirect to="/" />;
+    }
     case TeamGameState.createTeam:
-      return <CreateTeam createTeam={createTeam} team={team} />;
+      return (
+        <Container>
+          <Row>
+            <Col
+              sm="12"
+              md={{ size: 6, offset: 3 }}
+              lg={{ size: 6, offset: 3 }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
+                <Button color="link" onClick={returnToHome}>
+                  {'< Return'}
+                </Button>
+              </div>
+              <CreateTeam createTeam={createTeam} team={team} />
+            </Col>
+          </Row>
+        </Container>
+      );
     case TeamGameState.teamCreated:
       return (
-        <Fragment>
-          <Link to="/">
-            <Button color="link" block>
-              Leave Quiz
-            </Button>
-          </Link>
-          <ShowRooms team={team} changeTeam={changeTeam} joinGame={joinGame} />
-        </Fragment>
+        <Container>
+          <Row>
+            <Col
+              sm="12"
+              md={{ size: 6, offset: 3 }}
+              lg={{ size: 6, offset: 3 }}
+            >
+              <ShowRooms
+                team={team}
+                changeTeam={changeTeam}
+                joinGame={joinGame}
+                leaveLobby={returnToHome}
+              />
+            </Col>
+          </Row>
+        </Container>
       );
     case TeamGameState.roomJoined:
       return (
-        <TeamGame team={team} gameId={gameId} onDisconnect={props.onError} />
+        <Container>
+          <Row>
+            <Col
+              sm="12"
+              md={{ size: 6, offset: 3 }}
+              lg={{ size: 6, offset: 3 }}
+            >
+              <TeamGame
+                team={team}
+                gameId={gameId}
+                password={password}
+                onDisconnect={props.onError}
+              />
+            </Col>
+          </Row>
+        </Container>
       );
     default:
-      return <CreateTeam createTeam={setTeam} team={team} />;
+      return (
+        <Container>
+          <Row>
+            <Col
+              sm="12"
+              md={{ size: 6, offset: 3 }}
+              lg={{ size: 6, offset: 3 }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
+                <Button color="link" onClick={returnToHome}>
+                  {'< Return'}
+                </Button>
+              </div>
+              <CreateTeam createTeam={setTeam} team={team} />;
+            </Col>
+          </Row>
+        </Container>
+      );
   }
 };

@@ -9,7 +9,7 @@ interface PrepareRoundProps {
   setCategories: (categories: CategoryModel[]) => void;
 }
 
-export const PrepareRound: FunctionComponent<PrepareRoundProps> = props => {
+export const PrepareRound: FunctionComponent<PrepareRoundProps> = (props) => {
   const [pickedCategories, setPickedCategories] = useState<CategoryModel[]>([]);
 
   const selectCategory = (category: CategoryModel) => {
@@ -25,18 +25,21 @@ export const PrepareRound: FunctionComponent<PrepareRoundProps> = props => {
   const removeCategory = (category: CategoryModel) => {
     setPickedCategories(
       pickedCategories.filter(
-        pickedCategory => pickedCategory._id !== category._id,
+        (pickedCategory) => pickedCategory._id !== category._id,
       ),
     );
   };
 
   return (
     <Fragment>
-      <h3>Pick three categories</h3>
-      <ListGroup>
+      <h1>Select three categories</h1>
+      <p style={{ fontStyle: 'italic', fontSize: '.7em' }}>
+        Chosen categories will decide the available questions for the round.
+      </p>
+      <ListGroup style={{ overflowY: 'auto', margin: '10px 0px' }}>
         {props.categories.map((category, index) => {
           const selected = pickedCategories.find(
-            pickedCategory => pickedCategory._id === category._id,
+            (pickedCategory) => pickedCategory._id === category._id,
           );
           console.log(selected);
           return (
@@ -56,12 +59,10 @@ export const PrepareRound: FunctionComponent<PrepareRoundProps> = props => {
       <Button
         disabled={pickedCategories.length !== 3}
         onClick={() => props.setCategories(pickedCategories)}
+        color="success"
       >
         Done
       </Button>
-      <p style={{ fontStyle: 'italic', fontSize: '.7em' }}>
-        Chosen categories will decide the available questions for the round.
-      </p>
     </Fragment>
   );
 };

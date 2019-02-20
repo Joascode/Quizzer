@@ -101,12 +101,12 @@ export class QuizzDataAPI {
   //   return this.fetch('').then(data => data.currentRound);
   // }
 
-  static async joinQuiz(quizId: number | string, team: Team) {
+  static async joinQuiz(quizId: number | string, password: string, team: Team) {
     console.log('Join quiz team:');
     console.log(team);
     const response = await fetch(`${this.serverUrl}/quiz/${quizId}/team`, {
       method: 'POST',
-      body: JSON.stringify({ team: team }),
+      body: JSON.stringify({ password: password, team: team }),
       headers: { 'Content-Type': 'application/json' },
     });
     if (response.status === 200) {

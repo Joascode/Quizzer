@@ -1,19 +1,20 @@
-import React from 'react';
+import React, { Fragment } from 'react';
 import { GameInfoModel } from './TeamGame';
+import ListGroup from 'reactstrap/lib/ListGroup';
+import ListGroupItem from 'reactstrap/lib/ListGroupItem';
 
-export const PrepareGame: React.FunctionComponent<GameInfoModel> = props => {
+export const PrepareGame: React.FunctionComponent<GameInfoModel> = (props) => {
   return (
-    <div>
-      <h1>Host is preparing the game</h1>
-      <p>loading...</p>
+    <Fragment>
+      <h1>Waiting for teams</h1>
       <div>
-        <p>Teams:</p>
-        <ul>
+        <p>Teams</p>
+        <ListGroup flush>
           {props.teams.map((team, index) => (
-            <li key={index}>{team.name}</li>
+            <ListGroupItem key={index}>{team.name}</ListGroupItem>
           ))}
-        </ul>
+        </ListGroup>
       </div>
-    </div>
+    </Fragment>
   );
 };

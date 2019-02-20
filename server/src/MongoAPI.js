@@ -30,13 +30,15 @@ export default () => {
       }
     },
 
-    joinQuiz: async (quizId, team) => {
+    joinQuiz: async (quizId, password, team) => {
       console.log('New Team to join quiz');
       console.log(team);
       try {
         const query = {
           _id: quizId,
-          'teams.name': { $ne: team.name }
+          password: { $eq: password },
+          'teams.name': { $ne: team.name },
+          open: true
         };
         // const quizTeam = await Team.create({
         //   name: team.name,
