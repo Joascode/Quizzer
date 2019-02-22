@@ -30,16 +30,30 @@ export const PrepareQuiz: FunctionComponent<PrepareQuizProps> = (props) => {
       {props.teams.length <= 0 ? (
         <p style={{ flex: '1 auto' }}>No teams joined yet.</p>
       ) : (
-        <ListGroup style={{ flex: '1 auto', overflowY: 'auto' }}>
+        <ListGroup
+          style={{ flex: '1 auto', overflowY: 'auto', textAlign: 'left' }}
+        >
           {props.teams.map((team, index) => {
             return (
               <ListGroupItem key={index}>
-                <p
-                  style={{ fontSize: '1.2em' }}
-                  onClick={() => openTeam(team._id)}
+                <div
+                  style={{
+                    display: 'flex',
+                    flexFlow: 'row nowrap',
+                    justifyContent: 'space-between',
+                    padding: '10px 0 20px',
+                  }}
                 >
-                  {team.name}
-                </p>
+                  <p
+                    style={{ margin: '0', padding: '0' }}
+                    onClick={() => openTeam(team._id)}
+                  >
+                    Team: <strong>{team.name}</strong>
+                  </p>
+                  <Button color="danger" onClick={() => props.removeTeam(team)}>
+                    X
+                  </Button>
+                </div>
                 {openTeams.findIndex((open) => open === team._id) >= 0 ? (
                   <div style={{ margin: '0px 0px 5px' }}>
                     <p style={{ fontSize: '.85em' }}>Team members</p>
@@ -57,9 +71,6 @@ export const PrepareQuiz: FunctionComponent<PrepareQuizProps> = (props) => {
                     </ListGroup>
                   </div>
                 ) : null}
-                <Button color="danger" onClick={() => props.removeTeam(team)}>
-                  X
-                </Button>
               </ListGroupItem>
             );
           })}

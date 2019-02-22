@@ -13,7 +13,9 @@ interface SelectQuestionProps {
   selectQuestion: (question: QuestionModel) => void;
 }
 
-export const SelectQuestion: FunctionComponent<SelectQuestionProps> = props => {
+export const SelectQuestion: FunctionComponent<SelectQuestionProps> = (
+  props,
+) => {
   const [questions, setQuestions] = useState<QuestionModel[]>([]);
   const [questionOpen, setQuestionOpen] = useState<{
     index?: number;
@@ -24,22 +26,19 @@ export const SelectQuestion: FunctionComponent<SelectQuestionProps> = props => {
   });
   const [mounted, setMounted] = useState(true);
 
-  useEffect(
-    () => {
-      fetchNewRandomQuestions();
-    },
-    [props.categories, props.unavailableQuestions],
-  );
+  useEffect(() => {
+    fetchNewRandomQuestions();
+  }, [props.categories, props.unavailableQuestions]);
 
   // TODO: Filter the questions based on categories AND unavailablequestions (unavailable as in: they have already been used in the quiz/round)
   const fetchNewRandomQuestions = () => {
     QuizzDataHandler.fetchRandomQuestions(
       props.categories,
-      err => {
+      (err) => {
         console.log('Something bad happened while fetching categories.');
         console.log(err);
       },
-      questions => {
+      (questions) => {
         console.log('Succesfully fetched categories');
         console.log(questions);
         if (mounted) setQuestions(questions);
@@ -62,10 +61,32 @@ export const SelectQuestion: FunctionComponent<SelectQuestionProps> = props => {
       <ListGroup>
         {questions.map((question, index) => {
           return (
-            <div key={index}>
-              <ListGroupItem action onClick={() => showDetails(index)}>
-                {question.question}
-              </ListGroupItem>
+            <ListGroupItem key={index}>
+              <div
+                style={{
+                  display: 'flex',
+                  flexFlow: 'row nowrap',
+                  justifyContent: 'space-between',
+                }}
+              >
+                <p
+                  style={{
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    textAlign: 'left',
+                  }}
+                  onClick={() => showDetails(index)}
+                >
+                  {question.question}
+                </p>
+                <Button
+                  color="primary"
+                  onClick={() => props.selectQuestion(question)}
+                >
+                  Choose
+                </Button>
+              </div>
               {questionOpen.index === index && questionOpen.open ? (
                 <ListGroup>
                   <ListGroupItemHeading>
@@ -74,13 +95,7 @@ export const SelectQuestion: FunctionComponent<SelectQuestionProps> = props => {
                   <ListGroupItemText>{question.answer}</ListGroupItemText>
                 </ListGroup>
               ) : null}
-              <Button
-                color="primary"
-                onClick={() => props.selectQuestion(question)}
-              >
-                Choose
-              </Button>
-            </div>
+            </ListGroupItem>
           );
         })}
       </ListGroup>

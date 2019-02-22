@@ -32,8 +32,10 @@ export const QuizOverview: FunctionComponent<QuizOverviewProps> = (props) => {
         <ListGroupItem style={{ padding: '.75rem 0' }}>
           <p style={{ fontWeight: 'bold' }}>Categories</p>
           <ListGroup>
-            {props.categories.map((category) => {
-              return <ListGroupItem>{category.category}</ListGroupItem>;
+            {props.categories.map((category, index) => {
+              return (
+                <ListGroupItem key={index}>{category.category}</ListGroupItem>
+              );
             })}
           </ListGroup>
         </ListGroupItem>
@@ -46,17 +48,19 @@ export const QuizOverview: FunctionComponent<QuizOverviewProps> = (props) => {
         <ListGroupItem style={{ padding: '.75rem 0' }}>
           <p style={{ fontWeight: 'bold' }}>Previous questions</p>
           <ListGroup>
-            {props.questions.map((question) => {
-              return <ListGroupItem>{question.question}</ListGroupItem>;
+            {props.questions.map((question, index) => {
+              return (
+                <ListGroupItem key={index}>{question.question}</ListGroupItem>
+              );
             })}
           </ListGroup>
         </ListGroupItem>
         <ListGroupItem style={{ padding: '.75rem 0' }}>
           <p style={{ fontWeight: 'bold' }}>Teams</p>
           <ListGroup>
-            {props.teams.map((team) => {
+            {props.teams.map((team, index) => {
               return (
-                <ListGroupItem>
+                <ListGroupItem key={index}>
                   <p>Name: {team.name}</p>
                   <p>Score: {team.score}</p>
                 </ListGroupItem>

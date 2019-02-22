@@ -71,7 +71,7 @@ export const CreateQuiz: FunctionComponent<CreateQuizProps> = (props) => {
             value={quizInfo.name}
             onChange={handleInputChange}
           />
-          <FormFeedback invalid>A quizz name is required</FormFeedback>
+          <FormFeedback>A quizz name is required</FormFeedback>
         </FormGroup>
         <FormGroup>
           <Label>Number of questions per round</Label>
@@ -85,9 +85,7 @@ export const CreateQuiz: FunctionComponent<CreateQuizProps> = (props) => {
             value={quizInfo.maxNQuestions}
             onChange={handleInputChange}
           />
-          <FormFeedback invalid>
-            Round requires atleast 2 questions
-          </FormFeedback>
+          <FormFeedback>Round requires atleast 2 questions</FormFeedback>
         </FormGroup>
         <FormGroup check style={{ margin: '10px 0px 10px 5px' }}>
           <Label check>

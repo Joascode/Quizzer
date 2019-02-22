@@ -3,6 +3,13 @@ import Button from 'reactstrap/lib/Button';
 import ListGroup from 'reactstrap/lib/ListGroup';
 import ListGroupItem from 'reactstrap/lib/ListGroupItem';
 import { QuizzDataHandler } from '../../shared/services/QuizzDataHandler';
+import { NimbleEmoji } from 'emoji-mart';
+import data from 'emoji-mart/data/emojione.json';
+import InputGroup from 'reactstrap/lib/InputGroup';
+import Input from 'reactstrap/lib/Input';
+import InputGroupAddon from 'reactstrap/lib/InputGroupAddon';
+import FormGroup from 'reactstrap/lib/FormGroup';
+import FormFeedback from 'reactstrap/lib/FormFeedback';
 
 interface QuestionProps {
   question?: {
@@ -34,6 +41,12 @@ export const Question: React.FunctionComponent<QuestionProps> = (props) => {
   const [answerError, setAnswerError] = useState('');
 
   useEffect(() => {
+    console.log('New poke arrived');
+    console.log(props.poke);
+    // https://github.com/missive/emoji-mart
+  }, [props.poke]);
+
+  useEffect(() => {
     let mounted = true;
     if (props.question) {
       console.log(props.question._id);
@@ -60,7 +73,7 @@ export const Question: React.FunctionComponent<QuestionProps> = (props) => {
   const sendAnswer = () => {
     if (answer !== '') {
       setAnswerError('');
-      addToPrreviousAnswers([...previousAnswers, answer]);
+      addToPrreviousAnswers([answer, ...previousAnswers]);
       setLastGivenAnswer(answer);
       props.sendAnswer(question._id, answer);
       setAnswered(true);
@@ -72,7 +85,7 @@ export const Question: React.FunctionComponent<QuestionProps> = (props) => {
   const sendUpdate = () => {
     if (answer !== '' && answer !== lastGivenAnswer) {
       setAnswerError('');
-      addToPrreviousAnswers([...previousAnswers, answer]);
+      addToPrreviousAnswers([answer, ...previousAnswers]);
       setLastGivenAnswer(answer);
       props.sendUpdate(question._id, answer);
     } else if (answer === '') {
@@ -86,18 +99,47 @@ export const Question: React.FunctionComponent<QuestionProps> = (props) => {
     <Fragment>
       <h3>{question.question}</h3>
       <p>{question.category}</p>
-      <input
-        value={answer}
-        onChange={(event) => setAnswer(event.target.value)}
-      />
-      {answerError ? <p style={{ color: 'red' }}>{answerError}</p> : null}
-      {props.poke ? <p>{props.poke}</p> : null}
-      {answered ? (
-        <Button onClick={() => sendUpdate()}>Update</Button>
-      ) : (
-        <Button onClick={() => sendAnswer()}>Send</Button>
-      )}
-      <Button onClick={() => setAnswer('')}>Clear</Button>
+      <FormGroup>
+        <InputGroup>
+          <InputGroupAddon addonType="prepend">
+            <Button color="link" onClick={() => setAnswer('')}>
+              x
+            </Button>
+          </InputGroupAddon>
+          <Input
+            invalid={answerError !== ''}
+            placeholder="Answer"
+            value={answer}
+            onChange={(event) => setAnswer(event.target.value)}
+          />
+          <InputGroupAddon addonType="append">
+            {answered ? (
+              <Button color="primary" onClick={() => sendUpdate()}>
+                Update
+              </Button>
+            ) : (
+              <Button color="primary" onClick={() => sendAnswer()}>
+                Send
+              </Button>
+            )}
+          </InputGroupAddon>
+          <FormFeedback>{answerError}</FormFeedback>
+        </InputGroup>
+      </FormGroup>
+      {/* 
+      {answerError ? <p style={{ color: 'red' }}>{answerError}</p> : null} */}
+      {props.poke ? (
+        <p>
+          Quiz Master pokes:{' '}
+          <NimbleEmoji
+            set="emojione"
+            data={data}
+            emoji={props.poke}
+            size={20}
+          />
+        </p>
+      ) : null}
+      <p>Previous Answers</p>
       <ListGroup>
         {previousAnswers.map((previousAnswer, index) => {
           return <ListGroupItem key={index}>{previousAnswer}</ListGroupItem>;

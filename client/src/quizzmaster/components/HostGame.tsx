@@ -63,7 +63,7 @@ export interface TeamModel {
     questionId: string;
     value: string;
     correct: boolean;
-    version: number;
+    _version: number;
     judged: boolean;
   };
   score: number;

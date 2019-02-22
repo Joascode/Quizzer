@@ -41,7 +41,6 @@ export const PrepareRound: FunctionComponent<PrepareRoundProps> = (props) => {
           const selected = pickedCategories.find(
             (pickedCategory) => pickedCategory._id === category._id,
           );
-          console.log(selected);
           return (
             <ListGroupItem
               active={selected ? true : false}
