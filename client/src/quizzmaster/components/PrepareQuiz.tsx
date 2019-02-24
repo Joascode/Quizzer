@@ -31,6 +31,7 @@ export const PrepareQuiz: FunctionComponent<PrepareQuizProps> = (props) => {
         <p style={{ flex: '1 auto' }}>No teams joined yet.</p>
       ) : (
         <ListGroup
+          flush
           style={{ flex: '1 auto', overflowY: 'auto', textAlign: 'left' }}
         >
           {props.teams.map((team, index) => {
@@ -41,7 +42,7 @@ export const PrepareQuiz: FunctionComponent<PrepareQuizProps> = (props) => {
                     display: 'flex',
                     flexFlow: 'row nowrap',
                     justifyContent: 'space-between',
-                    padding: '10px 0 20px',
+                    padding: '10px 0',
                   }}
                 >
                   <p
@@ -57,11 +58,10 @@ export const PrepareQuiz: FunctionComponent<PrepareQuizProps> = (props) => {
                 {openTeams.findIndex((open) => open === team._id) >= 0 ? (
                   <div style={{ margin: '0px 0px 5px' }}>
                     <p style={{ fontSize: '.85em' }}>Team members</p>
-                    <ListGroup flush>
+                    <ListGroup flush={false} style={{ fontSize: '.85em' }}>
                       {team.members.map((member, index) => {
                         return (
                           <ListGroupItem
-                            style={{ backgroundColor: '#deeeff' }}
                             key={index}
                           >
                             {member}

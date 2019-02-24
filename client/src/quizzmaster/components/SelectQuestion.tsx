@@ -57,7 +57,7 @@ export const SelectQuestion: FunctionComponent<SelectQuestionProps> = (
   return (
     <Fragment>
       <h3>Pick a question</h3>
-      <Button onClick={() => fetchNewRandomQuestions()}>Refresh</Button>
+      <Button block color='link' onClick={() => fetchNewRandomQuestions()}>New Questions</Button>
       <ListGroup>
         {questions.map((question, index) => {
           return (
@@ -71,7 +71,6 @@ export const SelectQuestion: FunctionComponent<SelectQuestionProps> = (
               >
                 <p
                   style={{
-                    whiteSpace: 'nowrap',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
                     textAlign: 'left',
@@ -82,6 +81,7 @@ export const SelectQuestion: FunctionComponent<SelectQuestionProps> = (
                 </p>
                 <Button
                   color="primary"
+                  style={{ marginBottom: 'auto'}}
                   onClick={() => props.selectQuestion(question)}
                 >
                   Choose

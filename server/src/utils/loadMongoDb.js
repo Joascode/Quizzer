@@ -17,7 +17,6 @@ export const load = questions => {
     const CategoryModel = model('Category', CategorySchema);
     const QuestionModel = model('Question', QuestionSchema);
     const Quiz = model('Quiz', QuizSchema);
-    const Team = model('Team', TeamSchema);
     const Answer = model('Answer', AnswerSchema);
 
     const categories = new Set();
@@ -26,7 +25,6 @@ export const load = questions => {
     });
     const categoriesArray = Array.from(categories);
     Quiz.create({});
-    Team.create({});
     Answer.create({});
 
     const savedCats = [];

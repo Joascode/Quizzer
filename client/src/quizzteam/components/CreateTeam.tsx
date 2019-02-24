@@ -95,7 +95,7 @@ export const CreateTeam: React.FunctionComponent<CreateTeamProps> = (props) => {
         className="member-container"
         style={{ flex: '1 auto', overflowY: 'auto' }}
       >
-        <p>Members ({team.members.length}/5):</p>
+        <p>{team.members.length < 2 ? `Atleast two members required` : `Members (${team.members.length}/5):`}</p>
         <ListGroup flush>
           {team.members.map((member, index) => (
             <ListGroupItem

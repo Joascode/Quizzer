@@ -770,7 +770,7 @@ export const HostGame: FunctionComponent<HostGameProps> = (props) => {
         <Row>
           <Col
             lg={{ size: 2 }}
-            md={{ size: 2 }}
+            md={{ size: 3 }}
             style={{ borderRight: '1px solid darkgrey' }}
           >
             <QuizOverview
@@ -783,7 +783,7 @@ export const HostGame: FunctionComponent<HostGameProps> = (props) => {
           </Col>
           <Col
             lg={{ size: 8, offset: 1 }}
-            md={{ size: 8, offset: 1 }}
+            md={{ size: 7, offset: 1 }}
             sm={{ size: 12 }}
           >
             {renderViewBasedOnGameState()}
