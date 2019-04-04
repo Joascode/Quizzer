@@ -18,7 +18,6 @@ export const QuizOverview: FunctionComponent<QuizOverviewProps> = (props) => {
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'flex-start',
-        padding: '20px 10px',
         textAlign: 'left',
         maxHeight: '100%',
       }}

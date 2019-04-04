@@ -4,7 +4,6 @@ import CategorySchema from '../schemas/CategorySchema';
 import QuestionSchema from '../schemas/QuestionSchema';
 import Quiz from '../schemas/QuizSchema';
 import AnswerSchema from '../schemas/AnswerSchema';
-import TeamSchema from '../schemas/TeamSchema';
 
 export default questions => {
   mongoose.connect('mongodb://localhost/quizzer');
@@ -16,8 +15,6 @@ export default questions => {
     // we're connected!
     const CategoryModel = model('Category', CategorySchema);
     const QuestionModel = model('Question', QuestionSchema);
-    // const Quiz = model('Quiz', QuizSchema);
-    const Team = model('Team', TeamSchema);
     const Answer = model('Answer', AnswerSchema);
 
     const categories = new Set();
@@ -26,7 +23,6 @@ export default questions => {
     });
     const categoriesArray = Array.from(categories);
     Quiz.create({});
-    Team.create({});
     Answer.create({});
 
     const algemeenQuestions = [];

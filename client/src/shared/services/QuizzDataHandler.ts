@@ -22,11 +22,16 @@ export class QuizzDataHandler {
   private static onPokeCb?: (poke: { teamId: string; poke: string }) => void;
   private static quizId?: string;
   private static teamId?: string;
+  private static connected = false;
+  private static host = false;
 
   public static connect() {
     QuizzWebsocketAPI.connect(
       'ws://localhost:8081/',
-      () => console.log('Connected'),
+      () => {
+        console.log('Connected');
+        this.connected = true;
+      }, 
       () => console.log('Closed'),
     );
 
@@ -98,6 +103,7 @@ export class QuizzDataHandler {
       .then((newQuiz) => {
         QuizzWebsocketAPI.hostQuiz(newQuiz._id);
         this.quizId = newQuiz._id;
+        this.host = true;
         onsuccess(newQuiz);
       })
       .catch((err) => onerror(err));
@@ -571,17 +577,23 @@ export class QuizzDataHandler {
   // TODO: Catch errors that may arise.
 
   public static closeConnection() {
-    if (this.quizId) QuizzDataAPI.closeQuiz(this.quizId); // TODO: Only call close quiz if it's the host.
-    QuizzWebsocketAPI.closeWS();
+    if(this.connected) {
+      if (this.quizId && this.host) QuizzDataAPI.closeQuiz(this.quizId); // TODO: Only call close quiz if it's the host.
+      QuizzWebsocketAPI.closeWS();
+      this.connected = false;
+    }
   }
 
   // TODO: Catch errors that may arise.
   public static disconnectGame() {
-    if (this.quizId) {
-      QuizzDataAPI.closeQuiz(this.quizId); // TODO: Only call close quiz if it's the host.
-      QuizzWebsocketAPI.closeQuiz(this.quizId);
-    } else {
-      QuizzWebsocketAPI.closeWS();
+    if(this.connected) {
+      if (this.quizId && this.host) {
+        QuizzDataAPI.closeQuiz(this.quizId); // TODO: Only call close quiz if it's the host.
+        QuizzWebsocketAPI.closeQuiz(this.quizId);
+      } else {
+        QuizzWebsocketAPI.closeWS();
+      }
+      this.connected = false;
     }
   }
 

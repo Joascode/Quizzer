@@ -3,6 +3,7 @@ import { TeamModel, QuestionModel } from './HostGame';
 import ListGroup from 'reactstrap/lib/ListGroup';
 import ListGroupItem from 'reactstrap/lib/ListGroupItem';
 import Button from 'reactstrap/lib/Button';
+import ButtonGroup from 'reactstrap/lib/ButtonGroup';
 
 interface QuestionAnsweringProps {
   teams: TeamModel[];
@@ -36,32 +37,31 @@ export const QuestionJudging: FunctionComponent<QuestionAnsweringProps> = (
 
   const renderButtonsBeforeJudgement = (team: any) => {
     return (
-      <div>
+      <ButtonGroup>
         <Button
           color="success"
           onClick={() => props.setCorrect(team._id, team.answer._id)}
         >
-          Correct
+          V
         </Button>
         <Button
           color="danger"
           onClick={() => props.setIncorrect(team._id, team.answer._id)}
         >
-          Incorrect
+          X
         </Button>
-      </div>
+      </ButtonGroup>
     );
   };
 
   const renderButtonsAfterJudgement = (team: any) => {
     return team.answer.correct ? (
       <div>
-        <p>V</p>
         <Button
           color="danger"
           onClick={() => props.setIncorrect(team._id, team.answer._id)}
         >
-          Incorrect
+          X
         </Button>
       </div>
     ) : (
@@ -69,7 +69,7 @@ export const QuestionJudging: FunctionComponent<QuestionAnsweringProps> = (
         color="success"
         onClick={() => props.setCorrect(team._id, team.answer._id)}
       >
-        Correct
+        V
       </Button>
     );
   };
@@ -78,26 +78,31 @@ export const QuestionJudging: FunctionComponent<QuestionAnsweringProps> = (
     <Fragment>
       <h1>Question Judging Time!</h1>
       <div>
-        <h3>{props.question.question}</h3>
+        <p>{props.question.question}</p>
         <p>{props.question.answer}</p>
       </div>
       <ListGroup>
         {props.teams.map((team, index) => {
           return (
             <ListGroupItem key={index}>
-              {team.name}{' '}
-              {team.answer.value !== '' ? team.answer.value : 'No answer sent.'}{' '}
-              {team.answer.value !== ''
-                ? team.answer.judged
-                  ? renderButtonsAfterJudgement(team)
-                  : renderButtonsBeforeJudgement(team)
-                : null}
+              <p style={{ textAlign: 'left'}}>Team: {team.name}</p>
+              <div style={{ display: 'flex', flexFlow: 'column'}}>
+                <div style={{ display: 'flex', flexFlow: 'row nowrap', justifyContent: 'space-between'}}>
+                  <p style={{ textAlign: 'left', overflow: 'hidden' }}>{team.answer.value !== '' ? `Answer: ${team.answer.value}` : 'No answer sent.'}{' '}</p>
+                  {team.answer.value !== ''
+                    ? team.answer.judged
+                      ? renderButtonsAfterJudgement(team)
+                      : renderButtonsBeforeJudgement(team)
+                    : null}
+                  </div>
+              </div>
             </ListGroupItem>
           );
         })}
       </ListGroup>
       {props.endOfRound ? (
         <Button
+          style={{ margin: '10px 0'}}
           disabled={timeToClose > 0}
           color="primary"
           onClick={() => props.endRound()}
@@ -106,6 +111,7 @@ export const QuestionJudging: FunctionComponent<QuestionAnsweringProps> = (
         </Button>
       ) : (
         <Button
+          style={{ margin: '10px 0'}}
           disabled={timeToClose > 0}
           color="primary"
           onClick={() => props.nextQuestion()}
