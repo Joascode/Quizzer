@@ -1,7 +1,7 @@
 import { Schema } from 'mongoose';
 
 function arrayLimit(val) {
-  return val.length <= 2;
+  return val.length >= 2;
 }
 
 export default new Schema({

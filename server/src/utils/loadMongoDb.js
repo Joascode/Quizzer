@@ -1,22 +1,22 @@
-import { CategorySchema } from '../schemas/CategorySchema';
-import { QuestionSchema } from '../schemas/QuestionSchema';
-import { model } from 'mongoose';
-import { QuizSchema } from '../schemas/QuizSchema';
-import { AnswerSchema } from '../schemas/AnswerSchema';
-import { TeamSchema } from '../schemas/TeamSchema';
+import { model, mongoose } from 'mongoose';
 
-export const load = questions => {
-  const mongoose = require('mongoose');
+import CategorySchema from '../schemas/CategorySchema';
+import QuestionSchema from '../schemas/QuestionSchema';
+import Quiz from '../schemas/QuizSchema';
+import AnswerSchema from '../schemas/AnswerSchema';
+import TeamSchema from '../schemas/TeamSchema';
+
+export default questions => {
   mongoose.connect('mongodb://localhost/quizzer');
   mongoose.connection.dropDatabase();
   const db = mongoose.connection;
 
   db.on('error', console.error.bind(console, 'connection error:'));
-  db.once('open', function() {
+  db.once('open', () => {
     // we're connected!
     const CategoryModel = model('Category', CategorySchema);
     const QuestionModel = model('Question', QuestionSchema);
-    const Quiz = model('Quiz', QuizSchema);
+    // const Quiz = model('Quiz', QuizSchema);
     const Team = model('Team', TeamSchema);
     const Answer = model('Answer', AnswerSchema);
 
@@ -29,7 +29,6 @@ export const load = questions => {
     Team.create({});
     Answer.create({});
 
-    const savedCats = [];
     const algemeenQuestions = [];
     const etenEnDrinkenQuestions = [];
     const geschiedenisQuestions = [];
@@ -38,7 +37,7 @@ export const load = questions => {
     const sportQuestions = [];
     const wetenschapEnTechniekQuestions = [];
 
-    questions.forEach((question, index) => {
+    questions.forEach(question => {
       console.log('Pushing question.');
       console.log(question);
       switch (question.category) {
@@ -68,24 +67,45 @@ export const load = questions => {
       }
     });
 
+    const saveQuestion = (question, catId) => {
+      const quest = new QuestionModel({
+        question: question.question,
+        answer: question.answer,
+        category: catId
+      });
+      quest.save((err, savedQuest) => {
+        if (err) console.log(err);
+        console.log(savedQuest);
+      });
+    };
+
+    const saveRandomQuestion = (questionArray, catId) => {
+      const randomQuestion = Math.floor(Math.random() * questionArray.length);
+      const question = questionArray[randomQuestion];
+      if (question) {
+        setTimeout(() => {
+          questionArray.splice(randomQuestion, 1);
+          saveQuestion(question, catId);
+        }, 50);
+      }
+    };
+
     CategoryModel.insertMany(
       [
         {
-          category: 'Algemeen',
+          category: 'Algemeen'
         },
         { category: 'Eten en Drinken' },
         { category: 'Geschiedenis' },
         { category: 'Film en TV' },
         { category: 'Muziek' },
         { category: 'Sport' },
-        { category: 'Wetenschap en Techniek' },
+        { category: 'Wetenschap en Techniek' }
       ],
-      function(err, docs) {
+      (err, docs) => {
         console.log(docs);
-        questions.forEach((question, index) => {
-          const randomCategory = Math.floor(
-            Math.random() * categoriesArray.length,
-          );
+        questions.forEach(() => {
+          const randomCategory = Math.floor(Math.random() * categoriesArray.length);
           console.log(randomCategory);
           const category = docs[randomCategory];
           console.log(category);
@@ -124,34 +144,11 @@ export const load = questions => {
               break;
           }
         });
-      },
+      }
     );
 
-    const saveRandomQuestion = (questionArray, catId) => {
-      const randomQuestion = Math.floor(Math.random() * questionArray.length);
-      const question = questionArray[randomQuestion];
-      if (question) {
-        setTimeout(() => {
-          questionArray.splice(randomQuestion, 1);
-          saveQuestion(question, catId);
-        }, 50);
-      }
-    };
-
-    const saveQuestion = (question, catId) => {
-      const quest = new QuestionModel({
-        question: question.question,
-        answer: question.answer,
-        category: catId,
-      });
-      quest.save((err, savedQuest) => {
-        if (err) console.log(err);
-        console.log(savedQuest);
-      });
-    };
-
     QuestionModel.findOne({
-      question: 'Bij welke sport kan men de titel Mr. Olympia behalen?',
+      question: 'Bij welke sport kan men de titel Mr. Olympia behalen?'
     })
       .populate('category')
       .exec((err, question) => {

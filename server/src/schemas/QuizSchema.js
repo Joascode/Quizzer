@@ -1,9 +1,9 @@
-import { Schema } from 'mongoose';
+import { Schema, model } from 'mongoose';
 import RoundSchema from './RoundSchema';
 import TeamSchema from './TeamSchema';
 
 // TODO: Add validation https://mongoosejs.com/docs/validation.html
-export default new Schema({
+const QuizSchema = new Schema({
   name: {
     type: String,
     min: 1,
@@ -28,3 +28,6 @@ export default new Schema({
     required: true
   }
 });
+
+const Quiz = model('Quiz', QuizSchema);
+export default Quiz;

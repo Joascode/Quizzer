@@ -2,22 +2,33 @@ import { Schema } from 'mongoose';
 
 export default new Schema({
   quizId: {
+    required: true,
     type: Schema.Types.ObjectId
   },
   teamId: {
+    required: true,
     type: Schema.Types.ObjectId
   },
   questionId: {
+    required: true,
     type: Schema.Types.ObjectId
   },
-  roundNr: Number,
-  answer: String,
+  roundNr: {
+    type: Number,
+    required: true
+  },
+  answer: {
+    type: String,
+    required: true
+  },
   correct: {
     type: Boolean,
-    default: false
+    default: false,
+    required: true
   },
   _version: {
     type: Number,
-    default: 1
+    default: 1,
+    required: true
   }
 });

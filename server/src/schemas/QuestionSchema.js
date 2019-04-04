@@ -1,7 +1,13 @@
 import { Schema } from 'mongoose';
 
 export default new Schema({
-  question: String,
-  answer: String,
-  category: { type: Schema.Types.ObjectId, ref: 'Category' }
+  question: {
+    type: String,
+    required: true
+  },
+  answer: {
+    type: String,
+    required: true
+  },
+  category: { type: Schema.Types.ObjectId, ref: 'Category', required: true }
 });
