@@ -228,6 +228,15 @@ function wsReducer(state: ReducerModel, action: ReducerActions) {
     case ReducerActionTypes.selectQuestion:
       return {
         ...state,
+        quiz: {
+          ...state.quiz,
+          teams: state.quiz.teams.map(team  => {
+              return {
+                ...team,
+                answer: ''
+              }
+            })
+        },
         gameState: GameStates.selectQuestion,
       };
     case ReducerActionTypes.startQuestion:
@@ -674,11 +683,14 @@ export const HostGame: FunctionComponent<HostGameProps> = (props) => {
       case GameStates.preparingQuiz:
         return (
           <Fragment>
-            <Link to="/">
-              <Button color="danger" block>
-                Stop hosting
-              </Button>
-            </Link>
+            <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
+              <Link to="/">
+                <Button color="link" block>
+                  {'< Stop hosting'}
+                </Button>
+              </Link>
+            </div>
+            
             <PrepareQuiz
               teams={state.quiz.teams}
               addTeam={() =>

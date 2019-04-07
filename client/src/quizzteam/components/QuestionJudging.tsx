@@ -22,12 +22,15 @@ export const QuestionJudging: FunctionComponent<{
       <Fragment>
         <p>{props.question.question}</p>
         <p>Your answer:</p>
-        <p>{answer.answer}</p>
-        {answer.judged && answer.correct ? <p>{'Correct! :D'}</p> : null}
-        {answer.judged && !answer.correct ? <p>{'Incorrect :('}</p> : null}
-
+        <div style={{ display: 'flex', flexDirection: 'row', flexWrap: 'nowrap', justifyContent: 'center'}}>
+          <p style={{ fontSize: '1.7em', fontWeight: 'bold' }}>{answer.answer}</p>
+          {answer.judged ? 
+            answer.correct ? <span>{'v'}</span> : <span>{'x'}</span>
+            : null 
+          }
+        </div>
         {answer.judged && !answer.correct ? (
-          <p>Answer should've been: {props.question.answer}</p>
+          <p style={{ fontStyle: 'italic' }}>Answer should've been: {props.question.answer}</p>
         ) : null}
         <Button
           color="primary"
@@ -44,7 +47,7 @@ export const QuestionJudging: FunctionComponent<{
     return (
       <Fragment>
         <p>{props.question.question}</p>
-        <p>It seems you didn't send an answer.</p>
+        <p style={{ fontSize: '1.7em', fontWeight: 'bold' }}>It seems you didn't send an answer.</p>
         <p>Answer should've been: {props.question.answer}</p>
         <Button
           color="primary"

@@ -6,6 +6,7 @@ import ListGroup from 'reactstrap/lib/ListGroup';
 import ListGroupItem from 'reactstrap/lib/ListGroupItem';
 import { string } from 'prop-types';
 import { QuizzDataHandler } from '../../shared/services/QuizzDataHandler';
+import ButtonGroup from 'reactstrap/lib/ButtonGroup';
 
 interface CloseRoundProps {
   roundNr: number;
@@ -39,7 +40,7 @@ export const CloseRound: FunctionComponent<CloseRoundProps> = (props) => {
   return (
     <Fragment>
       <p>End of Round: {props.roundNr}</p>
-      <ListGroup>
+      <ListGroup style={{ margin: '0 0 10px'}}>
         {props.teams.map((team) => {
           return (
             <ListGroupItem>
@@ -55,12 +56,14 @@ export const CloseRound: FunctionComponent<CloseRoundProps> = (props) => {
         })}
       </ListGroup>
       <div>
-        <Button color="success" onClick={() => props.continuePlaying()}>
-          Continue playing
-        </Button>
-        <Button color="danger" onClick={() => props.stopPlaying()}>
-          Stop playing
-        </Button>
+        <ButtonGroup block>
+          <Button color="danger" onClick={() => props.stopPlaying()}>
+            Stop playing
+          </Button>
+          <Button color="success" onClick={() => props.continuePlaying()}>
+            Continue playing
+          </Button>
+        </ButtonGroup>
       </div>
     </Fragment>
   );

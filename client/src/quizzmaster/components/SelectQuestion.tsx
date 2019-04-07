@@ -58,7 +58,7 @@ export const SelectQuestion: FunctionComponent<SelectQuestionProps> = (
     <Fragment>
       <h3>Pick a question</h3>
       <Button block color='link' onClick={() => fetchNewRandomQuestions()}>New Questions</Button>
-      <ListGroup>
+      <ListGroup style={{ overflowY: 'auto' }}>
         {questions.map((question, index) => {
           return (
             <ListGroupItem key={index}>

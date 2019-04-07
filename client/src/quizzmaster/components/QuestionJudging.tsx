@@ -81,7 +81,7 @@ export const QuestionJudging: FunctionComponent<QuestionAnsweringProps> = (
         <p>{props.question.question}</p>
         <p>{props.question.answer}</p>
       </div>
-      <ListGroup>
+      <ListGroup style={{ margin: '0 0 10px'}}>
         {props.teams.map((team, index) => {
           return (
             <ListGroupItem key={index}>
@@ -102,8 +102,7 @@ export const QuestionJudging: FunctionComponent<QuestionAnsweringProps> = (
       </ListGroup>
       {props.endOfRound ? (
         <Button
-          style={{ margin: '10px 0'}}
-          disabled={timeToClose > 0}
+          // disabled={timeToClose > 0}
           color="primary"
           onClick={() => props.endRound()}
         >
@@ -111,8 +110,7 @@ export const QuestionJudging: FunctionComponent<QuestionAnsweringProps> = (
         </Button>
       ) : (
         <Button
-          style={{ margin: '10px 0'}}
-          disabled={timeToClose > 0}
+          // disabled={timeToClose > 0}
           color="primary"
           onClick={() => props.nextQuestion()}
         >

@@ -1,5 +1,5 @@
 import mongoose, { model } from 'mongoose';
-import QuizSchema from './schemas/QuizSchema';
+import Quiz from './schemas/QuizSchema';
 import QuestionSchema from './schemas/QuestionSchema';
 import CategorySchema from './schemas/CategorySchema';
 import AnswerSchema from './schemas/AnswerSchema';
@@ -7,7 +7,6 @@ import AnswerSchema from './schemas/AnswerSchema';
 export default () => {
   mongoose.connect('mongodb://localhost/quizzer', { useNewUrlParser: true });
 
-  const Quiz = model('Quiz', QuizSchema);
   const Category = model('Category', CategorySchema);
   const Question = model('Question', QuestionSchema);
   const Answer = model('Answer', AnswerSchema);

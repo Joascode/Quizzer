@@ -18,6 +18,7 @@ export const EndOfRound: FunctionComponent<EndOfRoundProps> = (props) => {
   >(undefined);
   const [scoreAdded, isScoreAdded] = useState(false);
   const [timer, setTimer] = useState<NodeJS.Timeout | null>(null);
+  const [teams, setTeams] = useState(props.teams.sort((teamA, teamB) => teamA.score - teamB.score));
 
   useEffect(() => {
     let mounted = true;
@@ -31,12 +32,11 @@ export const EndOfRound: FunctionComponent<EndOfRoundProps> = (props) => {
         ];
       }) => {
         if (mounted) {
-          console.log('Scores fetched');
-          console.log(scores);
           setTeamsRoundScore(scores.teamScores);
           setTimer(
             setTimeout(() => {
               props.addRoundScoreToScore(scores.teams);
+              setTeams(teams.sort((teamA, teamB) => teamA.score - teamB.score))
               isScoreAdded(true);
             }, 2000),
           );
@@ -49,6 +49,7 @@ export const EndOfRound: FunctionComponent<EndOfRoundProps> = (props) => {
     };
   }, [props.roundNr]);
 
+  // TODO: Wtf gebeurt hier? Waar is die check voor nodig?
   const renderTeamRoundScore = (team: TeamWithId) => {
     if (teamsRoundScore) {
       const teamRoundScore = teamsRoundScore.find(
@@ -64,12 +65,12 @@ export const EndOfRound: FunctionComponent<EndOfRoundProps> = (props) => {
   const notifyQuizMasterForNextRound = () => {
     console.log('Team ready for next round!');
   };
-
+  /* Sorteer op score voordat het wordt getoond */
   return (
     <Fragment>
       <p>End of Round: {props.roundNr}</p>
-      <ListGroup>
-        {props.teams.map((team) => {
+      <ListGroup> 
+        {teams.map((team) => {
           return (
             <ListGroupItem>
               {team._id === props.ownTeam._id ? (

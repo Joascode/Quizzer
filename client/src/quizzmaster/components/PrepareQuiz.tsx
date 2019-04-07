@@ -46,7 +46,7 @@ export const PrepareQuiz: FunctionComponent<PrepareQuizProps> = (props) => {
                   }}
                 >
                   <p
-                    style={{ margin: '0', padding: '0' }}
+                    style={{ margin: '0', padding: '0', cursor: 'pointer' }}
                     onClick={() => openTeam(team._id)}
                   >
                     Team: <strong>{team.name}</strong>
