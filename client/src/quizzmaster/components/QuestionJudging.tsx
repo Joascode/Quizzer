@@ -4,6 +4,7 @@ import ListGroup from 'reactstrap/lib/ListGroup';
 import ListGroupItem from 'reactstrap/lib/ListGroupItem';
 import Button from 'reactstrap/lib/Button';
 import ButtonGroup from 'reactstrap/lib/ButtonGroup';
+import { IoIosClose, IoIosCheckmark } from 'react-icons/io';
 
 interface QuestionAnsweringProps {
   teams: TeamModel[];
@@ -61,7 +62,7 @@ export const QuestionJudging: FunctionComponent<QuestionAnsweringProps> = (
           color="danger"
           onClick={() => props.setIncorrect(team._id, team.answer._id)}
         >
-          X
+          <IoIosClose />
         </Button>
       </div>
     ) : (
@@ -69,7 +70,7 @@ export const QuestionJudging: FunctionComponent<QuestionAnsweringProps> = (
         color="success"
         onClick={() => props.setCorrect(team._id, team.answer._id)}
       >
-        V
+        <IoIosCheckmark />
       </Button>
     );
   };

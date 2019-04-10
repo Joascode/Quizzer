@@ -1,6 +1,7 @@
 import React, { FunctionComponent, Fragment } from 'react';
 import { AnswerModel } from './TeamGame';
 import Button from 'reactstrap/lib/Button';
+import { IoIosClose, IoIosCheckmark } from 'react-icons/io';
 
 export const QuestionJudging: FunctionComponent<{
   question: {
@@ -22,10 +23,14 @@ export const QuestionJudging: FunctionComponent<{
       <Fragment>
         <p>{props.question.question}</p>
         <p>Your answer:</p>
-        <div style={{ display: 'flex', flexDirection: 'row', flexWrap: 'nowrap', justifyContent: 'center'}}>
-          <p style={{ fontSize: '1.7em', fontWeight: 'bold' }}>{answer.answer}</p>
+        <div style={{ display: 'flex', flexDirection: 'row', flexWrap: 'nowrap', justifyContent: 'center', margin: '10px 0'}}>
+          <p style={{ fontSize: '1.7em', margin: '0', fontWeight: 'bold' }}>{answer.answer}</p>
           {answer.judged ? 
-            answer.correct ? <span>{'v'}</span> : <span>{'x'}</span>
+            answer.correct ? <IoIosCheckmark style={{ fontSize: '2.5em',
+              height: '100%',
+              color: 'green'}} /> : <IoIosClose  style={{ fontSize: '2.5em',
+              height: '100%',
+              color: 'red' }} />
             : null 
           }
         </div>
