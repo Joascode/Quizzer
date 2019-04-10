@@ -610,14 +610,7 @@ export const TeamGame: React.FunctionComponent<GameProps> = (props) => {
           />
         );
       case GameState.preparingQuiz:
-        return (
-          <Fragment>
-            <Button color="danger" onClick={() => leaveQuiz()} block>
-              Leave Quiz
-            </Button>
-            <PrepareGame {...state.quiz} />
-          </Fragment>
-        );
+        return <PrepareGame teams={state.quiz.teams} leaveQuiz={leaveQuiz} />;
       case GameState.prepareRound:
         return <PrepareRound />;
       case GameState.selectQuestion:

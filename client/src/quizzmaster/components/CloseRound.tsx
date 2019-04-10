@@ -39,12 +39,14 @@ export const CloseRound: FunctionComponent<CloseRoundProps> = (props) => {
 
   return (
     <Fragment>
-      <p>End of Round: {props.roundNr}</p>
-      <ListGroup style={{ margin: '0 0 10px'}}>
-        {props.teams.map((team) => {
+      <h1>End of Round #{props.roundNr}</h1>
+      <ListGroup flush style={{ margin: '0 0 10px' }}>
+        {props.teams.map((team, index) => {
           return (
             <ListGroupItem>
-              <p>{team.name}</p>
+              <p>
+                {index + 1}. {team.name}
+              </p>
               {!scoreAdded ? (
                 <p>{team.score - team.roundScore}</p>
               ) : (

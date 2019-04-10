@@ -18,7 +18,9 @@ export const EndOfRound: FunctionComponent<EndOfRoundProps> = (props) => {
   >(undefined);
   const [scoreAdded, isScoreAdded] = useState(false);
   const [timer, setTimer] = useState<NodeJS.Timeout | null>(null);
-  const [teams, setTeams] = useState(props.teams.sort((teamA, teamB) => teamA.score - teamB.score));
+  const [teams, setTeams] = useState(
+    props.teams.sort((teamA, teamB) => teamB.score - teamA.score),
+  );
 
   useEffect(() => {
     let mounted = true;
@@ -36,7 +38,7 @@ export const EndOfRound: FunctionComponent<EndOfRoundProps> = (props) => {
           setTimer(
             setTimeout(() => {
               props.addRoundScoreToScore(scores.teams);
-              setTeams(teams.sort((teamA, teamB) => teamA.score - teamB.score))
+              setTeams(teams.sort((teamA, teamB) => teamB.score - teamA.score));
               isScoreAdded(true);
             }, 2000),
           );
@@ -68,15 +70,19 @@ export const EndOfRound: FunctionComponent<EndOfRoundProps> = (props) => {
   /* Sorteer op score voordat het wordt getoond */
   return (
     <Fragment>
-      <p>End of Round: {props.roundNr}</p>
-      <ListGroup> 
-        {teams.map((team) => {
+      <h1>End of Round #{props.roundNr}</h1>
+      <ListGroup flush style={{ margin: '0 0 10px' }}>
+        {teams.map((team, index) => {
           return (
             <ListGroupItem>
               {team._id === props.ownTeam._id ? (
-                <p style={{ fontWeight: 'bold' }}>{team.name}</p>
+                <p style={{ fontWeight: 'bold' }}>
+                  {index + 1}. {team.name}
+                </p>
               ) : (
-                <p>{team.name}</p>
+                <p>
+                  {index + 1}. {team.name}
+                </p>
               )}
               <p>{team.score}</p>
               {!scoreAdded ? renderTeamRoundScore(team) : null}

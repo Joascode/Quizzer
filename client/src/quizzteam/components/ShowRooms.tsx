@@ -4,11 +4,14 @@ import { Team } from './Team';
 import { QuizzDataAPI } from '../../shared/services/QuizzDataAPI';
 import ListGroupItem from 'reactstrap/lib/ListGroupItem';
 import ListGroup from 'reactstrap/lib/ListGroup';
+import { IoMdLock } from 'react-icons/io';
+import { TeamModel } from '../../quizzmaster/components/HostGame';
 
 interface RoomModel {
   _id: string;
   name: string;
   hasPassword: boolean;
+  teams: TeamModel[];
 }
 
 interface ModalModel {
@@ -65,6 +68,14 @@ export const ShowRooms: React.FunctionComponent<ShowRoomsProps> = (props) => {
   const [loading, setLoading] = useState(true);
 
   const fetchRooms = async () => {
+    // setLoading(true);
+    const data = await QuizzDataAPI.getQuizs();
+    console.log(data);
+    setRooms([...data]);
+    // setLoading(false);
+  };
+
+  const initialFetch = async () => {
     setLoading(true);
     const data = await QuizzDataAPI.getQuizs();
     console.log(data);
@@ -73,8 +84,17 @@ export const ShowRooms: React.FunctionComponent<ShowRoomsProps> = (props) => {
   };
 
   useEffect(() => {
-    fetchRooms();
+    initialFetch();
   }, []);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      fetchRooms();
+    }, 5000);
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [rooms]);
 
   const validatePassword = (id?: string) => {
     setPasswordState(PasswordStates.validating);
@@ -170,7 +190,7 @@ export const ShowRooms: React.FunctionComponent<ShowRoomsProps> = (props) => {
                 }}
               >
                 {room.hasPassword ? (
-                  <p style={{ margin: 'auto 10px' }}>locked</p>
+                  <IoMdLock style={{ margin: 'auto 10px' }} />
                 ) : null}
                 <Button
                   color="success"

@@ -114,7 +114,7 @@ export const QuestionAnswering: FunctionComponent<QuestionAnsweringProps> = (
         <h3>{props.question.question}</h3>
         <p>{props.question.answer}</p>
       </div>
-      <ListGroup style={{ overflowY: 'auto', margin: '10px 0px' }}>
+      <ListGroup style={{ margin: '10px 0px' }}>
         {props.teams.map((team, index) => {
           return (
             <ListGroupItem key={index}>

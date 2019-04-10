@@ -10,7 +10,7 @@
 import express from 'express';
 import bodyparser from 'body-parser';
 import http from 'http';
-import { load } from './utils/loadMongoDb';
+import load from './utils/loadMongoDb';
 import MongoAPI from './MongoAPI';
 import { websocketAPI } from './WebsocketAPI';
 import vragen from '../vragen.json';
@@ -85,7 +85,8 @@ app.get('/quiz/open', async (req, res) => {
       return {
         _id: quiz._id,
         name: quiz.name,
-        hasPassword
+        hasPassword,
+        teams: quiz.teams
       };
     });
     res.json(passWordCheckedQuizs);
