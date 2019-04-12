@@ -190,7 +190,7 @@ export default () => {
         const query = { category: { $in: categoryIds } };
         const questions = await Question.find(query)
           .skip(randomNumber)
-          .limit(20)
+          .limit(10)
           .populate('category');
         console.log('Found questions:');
         console.log(questions);

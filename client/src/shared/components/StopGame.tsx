@@ -63,7 +63,7 @@ export const StopGame: FunctionComponent<CloseGameProps> = (props) => {
   };
   return (
     <Fragment>
-      <p>End of the Quizz</p>
+      <h1>End of the Quizz</h1>
       <ListGroup flush>{renderListSortedOnHighestScore()}</ListGroup>
       <Button color="primary" block onClick={() => props.close()}>
         Close Quiz

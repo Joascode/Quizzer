@@ -6,6 +6,7 @@ import Row from 'reactstrap/lib/Row';
 import Col from 'reactstrap/lib/Col';
 import { Redirect } from 'react-router';
 import Button from 'reactstrap/lib/Button';
+import { IoIosArrowDropleft } from 'react-icons/io';
 
 enum QuizState {
   createQuiz,
@@ -54,11 +55,16 @@ export const Host: FunctionComponent<HostProps> = (props) => {
             <Col
               sm="12"
               md={{ size: 6, offset: 3 }}
-              lg={{ size: 4, offset: 4 }}
+              lg={{ size: 6, offset: 3 }}
             >
               <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
                 <Button color="link" onClick={returnToHome}>
-                  {'< Return'}
+                  {
+                    <IoIosArrowDropleft
+                      style={{ color: '#007bff', fontSize: '1.3em' }}
+                    />
+                  }{' '}
+                  Return
                 </Button>
               </div>
               <CreateQuiz
@@ -83,7 +89,12 @@ export const Host: FunctionComponent<HostProps> = (props) => {
             >
               <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
                 <Button color="link" onClick={returnToHome}>
-                  {'< Return'}
+                  {
+                    <IoIosArrowDropleft
+                      style={{ color: '#007bff', fontSize: '1.3em' }}
+                    />
+                  }{' '}
+                  Return
                 </Button>
               </div>
               <CreateQuiz

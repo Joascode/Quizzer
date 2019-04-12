@@ -6,6 +6,7 @@ import ListGroupItem from 'reactstrap/lib/ListGroupItem';
 import ListGroupItemHeading from 'reactstrap/lib/ListGroupItemHeading';
 import ListGroupItemText from 'reactstrap/lib/ListGroupItemText';
 import Button from 'reactstrap/lib/Button';
+import { IoIosRefresh } from 'react-icons/io';
 
 interface SelectQuestionProps {
   unavailableQuestions: QuestionModel[];
@@ -56,8 +57,11 @@ export const SelectQuestion: FunctionComponent<SelectQuestionProps> = (
 
   return (
     <Fragment>
-      <h3>Pick a question</h3>
-      <Button block color='link' onClick={() => fetchNewRandomQuestions()}>New Questions</Button>
+      <h1>Pick a question</h1>
+      <Button block color="link" onClick={() => fetchNewRandomQuestions()}>
+        New Questions{' '}
+        <IoIosRefresh style={{ color: '#007bff', fontSize: '1.1em' }} />
+      </Button>
       <ListGroup style={{ overflowY: 'auto' }}>
         {questions.map((question, index) => {
           return (
@@ -81,7 +85,7 @@ export const SelectQuestion: FunctionComponent<SelectQuestionProps> = (
                 </p>
                 <Button
                   color="primary"
-                  style={{ marginBottom: 'auto'}}
+                  style={{ marginBottom: 'auto' }}
                   onClick={() => props.selectQuestion(question)}
                 >
                   Choose

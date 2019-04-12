@@ -1,8 +1,17 @@
 import { Schema } from 'mongoose';
 
-function arrayLimit(val) {
+function minTeamMembers(val) {
   return val.length >= 2;
 }
+
+function maxTeamMembers(val) {
+  return val.length <= 5;
+}
+
+const validators = [
+  { validator: minTeamMembers, msg: '{PATH} does not exceeds the limit of 2' },
+  { validator: maxTeamMembers, msg: '{PATH} does exceeds the limit of 5' }
+];
 
 export default new Schema({
   name: {
@@ -13,7 +22,7 @@ export default new Schema({
   members: {
     type: [String],
     required: true,
-    validate: [arrayLimit, '{PATH} does not exceeds the limit of 2']
+    validate: validators
   },
   score: {
     type: Number,

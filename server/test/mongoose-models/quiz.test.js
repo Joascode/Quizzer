@@ -100,7 +100,7 @@ describe('Quiz assertions', () => {
       });
     });
 
-    it('should not accept teams with less than 2 teams', done => {
+    it('should not accept teams with less than 2 members', done => {
       const TeamModel = model('Team', TeamSchema);
       const team = new TeamModel({
         name: 'test-teams',
@@ -116,6 +116,27 @@ describe('Quiz assertions', () => {
       ).catch(err => {
         expect(err.errors.teams.errors.members.message).to.equal(
           'members does not exceeds the limit of 2'
+        );
+        done();
+      });
+    });
+
+    it('should not accept teams with more than 5 members', done => {
+      const TeamModel = model('Team', TeamSchema);
+      const team = new TeamModel({
+        name: 'test-teams',
+        members: ['test1', 'test2', 'test3', 'test4', 'test5', 'test6']
+      });
+
+      Quiz.findOneAndUpdate(
+        { name: 'test-members' },
+        {
+          $push: { teams: team }
+        },
+        { runValidators: true, new: true }
+      ).catch(err => {
+        expect(err.errors.teams.errors.members.message).to.equal(
+          'members does exceeds the limit of 5'
         );
         done();
       });

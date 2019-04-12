@@ -4,6 +4,7 @@ import Button from 'reactstrap/lib/Button';
 import ListGroup from 'reactstrap/lib/ListGroup';
 import ListGroupItem from 'reactstrap/lib/ListGroupItem';
 import { SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS } from 'constants';
+import { IoIosRemove } from 'react-icons/io';
 
 interface PrepareQuizProps {
   teams: TeamModel[];
@@ -51,8 +52,8 @@ export const PrepareQuiz: FunctionComponent<PrepareQuizProps> = (props) => {
                   >
                     Team: <strong>{team.name}</strong>
                   </p>
-                  <Button color="danger" onClick={() => props.removeTeam(team)}>
-                    X
+                  <Button color="link" onClick={() => props.removeTeam(team)}>
+                    <IoIosRemove style={{ color: 'red', fontSize: '1.3em' }} />
                   </Button>
                 </div>
                 {openTeams.findIndex((open) => open === team._id) >= 0 ? (
@@ -61,11 +62,7 @@ export const PrepareQuiz: FunctionComponent<PrepareQuizProps> = (props) => {
                     <ListGroup flush={false} style={{ fontSize: '.85em' }}>
                       {team.members.map((member, index) => {
                         return (
-                          <ListGroupItem
-                            key={index}
-                          >
-                            {member}
-                          </ListGroupItem>
+                          <ListGroupItem key={index}>{member}</ListGroupItem>
                         );
                       })}
                     </ListGroup>

@@ -6,6 +6,7 @@ import ListGroupItem from 'reactstrap/lib/ListGroupItem';
 import InputGroup from 'reactstrap/lib/InputGroup';
 import Input from 'reactstrap/lib/Input';
 import InputGroupAddon from 'reactstrap/lib/InputGroupAddon';
+import { IoIosAdd, IoIosRemove } from 'react-icons/io';
 
 interface CreateTeamProps {
   createTeam: CreateTeamFunc;
@@ -86,7 +87,7 @@ export const CreateTeam: React.FunctionComponent<CreateTeamProps> = (props) => {
                   : null;
               }}
             >
-              +
+              <IoIosAdd style={{ color: 'white', fontSize: '1.3em' }} />
             </Button>
           </InputGroupAddon>
         </InputGroup>
@@ -95,7 +96,11 @@ export const CreateTeam: React.FunctionComponent<CreateTeamProps> = (props) => {
         className="member-container"
         style={{ flex: '1 auto', overflowY: 'auto' }}
       >
-        <p>{team.members.length < 2 ? `Atleast two members required` : `Members (${team.members.length}/5):`}</p>
+        <p>
+          {team.members.length < 2
+            ? `Atleast two members required`
+            : `Members (${team.members.length}/5):`}
+        </p>
         <ListGroup flush>
           {team.members.map((member, index) => (
             <ListGroupItem
@@ -108,7 +113,7 @@ export const CreateTeam: React.FunctionComponent<CreateTeamProps> = (props) => {
             >
               <p style={{ padding: '0', margin: 'auto' }}>{member}</p>
               <Button
-                color="danger"
+                color="link"
                 onClick={() =>
                   setTeam({
                     name: team.name,
@@ -118,7 +123,7 @@ export const CreateTeam: React.FunctionComponent<CreateTeamProps> = (props) => {
                   })
                 }
               >
-                X
+                <IoIosRemove style={{ color: 'red', fontSize: '1.3em' }} />
               </Button>
             </ListGroupItem>
           ))}

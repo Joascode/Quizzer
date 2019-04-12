@@ -32,14 +32,14 @@ export const QuestionAnswering: FunctionComponent<QuestionAnsweringProps> = (
   if (!props.question) {
     return <div>No question was set.</div>;
   }
-  const [timeToClose, setTimeToClose] = useState(5);
+  const [timeToClose, setTimeToClose] = useState(0);
   const [emojiPickerForTeam, setEmojiPickerForTeam] = useState<string>('');
   const [givenEmojis, setGivenEmojis] = useState<TeamEmoji[]>([]);
 
   useEffect(() => {
     let mounted = true;
     const timer = setTimeout(() => {
-      if (mounted) setTimeToClose(timeToClose - 1);
+      if (mounted && timeToClose > 0) setTimeToClose(timeToClose - 1);
     }, 1000);
     return () => {
       mounted = false;

@@ -1,7 +1,12 @@
 import React, { FunctionComponent, Fragment } from 'react';
 import { AnswerModel } from './TeamGame';
 import Button from 'reactstrap/lib/Button';
-import { IoIosClose, IoIosCheckmark } from 'react-icons/io';
+import {
+  IoIosClose,
+  IoIosCheckmark,
+  IoIosCheckmarkCircleOutline,
+  IoIosCloseCircleOutline,
+} from 'react-icons/io';
 
 export const QuestionJudging: FunctionComponent<{
   question: {
@@ -21,23 +26,34 @@ export const QuestionJudging: FunctionComponent<{
   const renderAnswerGiven = (answer: AnswerModel) => {
     return (
       <Fragment>
-        <p>{props.question.question}</p>
-        <p>Your answer:</p>
-        <div style={{ display: 'flex', flexDirection: 'row', flexWrap: 'nowrap', justifyContent: 'center', margin: '10px 0'}}>
-          <p style={{ fontSize: '1.7em', margin: '0', fontWeight: 'bold' }}>{answer.answer}</p>
-          {answer.judged ? 
-            answer.correct ? <IoIosCheckmark style={{ fontSize: '2.5em',
-              height: '100%',
-              color: 'green'}} /> : <IoIosClose  style={{ fontSize: '2.5em',
-              height: '100%',
-              color: 'red' }} />
-            : null 
-          }
+        <h1>Judging Answers</h1>
+        <div style={{ flex: '1 1', display: 'flex', flexDirection: 'column' }}>
+          <p>{props.question.question}</p>
+          <p>Your answer:</p>
+          <p style={{ fontSize: '1.7em', margin: '0', fontWeight: 'bold' }}>
+            {answer.answer}
+          </p>
+          {answer.judged && !answer.correct ? (
+            <p style={{ fontStyle: 'italic' }}>
+              Answer should've been: {props.question.answer}
+            </p>
+          ) : null}
+          <div style={{ flex: '1 1', justifyContent: 'center' }}>
+            {answer.judged ? (
+              answer.correct ? (
+                <IoIosCheckmarkCircleOutline
+                  style={{ fontSize: '7em', height: '100%', color: 'green' }}
+                />
+              ) : (
+                <IoIosCloseCircleOutline
+                  style={{ fontSize: '7em', height: '100%', color: 'red' }}
+                />
+              )
+            ) : null}
+          </div>
         </div>
-        {answer.judged && !answer.correct ? (
-          <p style={{ fontStyle: 'italic' }}>Answer should've been: {props.question.answer}</p>
-        ) : null}
         <Button
+          disabled
           color="primary"
           block
           onClick={() => notifyQuizMasterForNextQuestion()}
@@ -51,10 +67,16 @@ export const QuestionJudging: FunctionComponent<{
   const renderNoAnswerGiven = () => {
     return (
       <Fragment>
-        <p>{props.question.question}</p>
-        <p style={{ fontSize: '1.7em', fontWeight: 'bold' }}>It seems you didn't send an answer.</p>
-        <p>Answer should've been: {props.question.answer}</p>
+        <h1>Judging Answers</h1>
+        <div style={{ flex: '1 1' }}>
+          <p>{props.question.question}</p>
+          <p style={{ fontSize: '1.7em', fontWeight: 'bold' }}>
+            It seems you didn't send an answer.
+          </p>
+          <p>Answer should've been: {props.question.answer}</p>
+        </div>
         <Button
+          disabled
           color="primary"
           block
           onClick={() => notifyQuizMasterForNextQuestion()}

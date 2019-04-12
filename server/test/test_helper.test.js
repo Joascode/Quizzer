@@ -23,7 +23,6 @@ beforeEach(done => {
   // mongoose.connection.on('open', () => {
   mongoose.connection.db.dropCollection('quiz', (err, result) => {
     // this function runs after the drop is completed
-    console.log('Dropped DB');
     done(); // go ahead everything is done now.
   });
   // });

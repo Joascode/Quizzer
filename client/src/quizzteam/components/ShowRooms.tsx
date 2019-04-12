@@ -4,7 +4,7 @@ import { Team } from './Team';
 import { QuizzDataAPI } from '../../shared/services/QuizzDataAPI';
 import ListGroupItem from 'reactstrap/lib/ListGroupItem';
 import ListGroup from 'reactstrap/lib/ListGroup';
-import { IoMdLock } from 'react-icons/io';
+import { IoMdLock, IoIosArrowDropleft, IoIosRefresh } from 'react-icons/io';
 import { TeamModel } from '../../quizzmaster/components/HostGame';
 
 interface RoomModel {
@@ -149,10 +149,16 @@ export const ShowRooms: React.FunctionComponent<ShowRoomsProps> = (props) => {
         }}
       >
         <Button color="link" onClick={props.leaveLobby}>
-          {'< Leave Lobby'}
+          {
+            <IoIosArrowDropleft
+              style={{ color: '#007bff', fontSize: '1.3em' }}
+            />
+          }{' '}
+          Return
         </Button>
         <Button color="link" onClick={fetchRooms} disabled={loading}>
-          Refresh
+          Refresh{' '}
+          <IoIosRefresh style={{ color: '#007bff', fontSize: '1.1em' }} />
         </Button>
       </div>
       <h1>Join a Quizz</h1>

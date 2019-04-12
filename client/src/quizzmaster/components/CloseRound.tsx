@@ -43,7 +43,7 @@ export const CloseRound: FunctionComponent<CloseRoundProps> = (props) => {
       <ListGroup flush style={{ margin: '0 0 10px' }}>
         {props.teams.map((team, index) => {
           return (
-            <ListGroupItem>
+            <ListGroupItem key={index}>
               <p>
                 {index + 1}. {team.name}
               </p>
@@ -58,7 +58,7 @@ export const CloseRound: FunctionComponent<CloseRoundProps> = (props) => {
         })}
       </ListGroup>
       <div>
-        <ButtonGroup block>
+        <ButtonGroup>
           <Button color="danger" onClick={() => props.stopPlaying()}>
             Stop playing
           </Button>

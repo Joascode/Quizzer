@@ -23,12 +23,12 @@ export const QuestionJudging: FunctionComponent<QuestionAnsweringProps> = (
     return <div>No question was set.</div>;
   }
 
-  const [timeToClose, setTimeToClose] = useState(5);
+  const [timeToClose, setTimeToClose] = useState(0);
 
   useEffect(() => {
     let mounted = true;
     const timer = setTimeout(() => {
-      if (mounted) setTimeToClose(timeToClose - 1);
+      if (mounted && timeToClose > 0) setTimeToClose(timeToClose - 1);
     }, 1000);
     return () => {
       mounted = false;
@@ -40,38 +40,47 @@ export const QuestionJudging: FunctionComponent<QuestionAnsweringProps> = (
     return (
       <ButtonGroup>
         <Button
-          color="success"
+          color="link"
           onClick={() => props.setCorrect(team._id, team.answer._id)}
         >
-          V
+          <IoIosCheckmark style={{ color: 'green', fontSize: '1.3em' }} />
         </Button>
         <Button
-          color="danger"
+          color="link"
           onClick={() => props.setIncorrect(team._id, team.answer._id)}
         >
-          X
+          <IoIosClose style={{ color: 'red', fontSize: '1.3em' }} />
         </Button>
       </ButtonGroup>
     );
   };
 
   const renderButtonsAfterJudgement = (team: any) => {
-    return team.answer.correct ? (
-      <div>
+    return (
+      <ButtonGroup>
         <Button
-          color="danger"
+          color={team.answer.correct ? 'success' : 'link'}
+          onClick={() => props.setCorrect(team._id, team.answer._id)}
+        >
+          <IoIosCheckmark
+            style={{
+              color: team.answer.correct ? 'white' : 'green',
+              fontSize: '1.3em',
+            }}
+          />
+        </Button>
+        <Button
+          color={!team.answer.correct ? 'danger' : 'link'}
           onClick={() => props.setIncorrect(team._id, team.answer._id)}
         >
-          <IoIosClose />
+          <IoIosClose
+            style={{
+              color: !team.answer.correct ? 'white' : 'red',
+              fontSize: '1.3em',
+            }}
+          />
         </Button>
-      </div>
-    ) : (
-      <Button
-        color="success"
-        onClick={() => props.setCorrect(team._id, team.answer._id)}
-      >
-        <IoIosCheckmark />
-      </Button>
+      </ButtonGroup>
     );
   };
 
@@ -82,20 +91,30 @@ export const QuestionJudging: FunctionComponent<QuestionAnsweringProps> = (
         <p>{props.question.question}</p>
         <p>{props.question.answer}</p>
       </div>
-      <ListGroup style={{ margin: '0 0 10px'}}>
+      <ListGroup style={{ margin: '0 0 10px' }}>
         {props.teams.map((team, index) => {
           return (
             <ListGroupItem key={index}>
-              <p style={{ textAlign: 'left'}}>Team: {team.name}</p>
-              <div style={{ display: 'flex', flexFlow: 'column'}}>
-                <div style={{ display: 'flex', flexFlow: 'row nowrap', justifyContent: 'space-between'}}>
-                  <p style={{ textAlign: 'left', overflow: 'hidden' }}>{team.answer.value !== '' ? `Answer: ${team.answer.value}` : 'No answer sent.'}{' '}</p>
+              <p style={{ textAlign: 'left' }}>Team: {team.name}</p>
+              <div style={{ display: 'flex', flexFlow: 'column' }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    flexFlow: 'row nowrap',
+                    justifyContent: 'space-between',
+                  }}
+                >
+                  <p style={{ textAlign: 'left', overflow: 'hidden' }}>
+                    {team.answer.value !== ''
+                      ? `Answer: ${team.answer.value}`
+                      : 'No answer sent.'}{' '}
+                  </p>
                   {team.answer.value !== ''
                     ? team.answer.judged
                       ? renderButtonsAfterJudgement(team)
                       : renderButtonsBeforeJudgement(team)
                     : null}
-                  </div>
+                </div>
               </div>
             </ListGroupItem>
           );
@@ -103,7 +122,7 @@ export const QuestionJudging: FunctionComponent<QuestionAnsweringProps> = (
       </ListGroup>
       {props.endOfRound ? (
         <Button
-          // disabled={timeToClose > 0}
+          disabled={timeToClose > 0}
           color="primary"
           onClick={() => props.endRound()}
         >
@@ -111,7 +130,7 @@ export const QuestionJudging: FunctionComponent<QuestionAnsweringProps> = (
         </Button>
       ) : (
         <Button
-          // disabled={timeToClose > 0}
+          disabled={timeToClose > 0}
           color="primary"
           onClick={() => props.nextQuestion()}
         >

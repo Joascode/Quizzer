@@ -21,6 +21,7 @@ import { QuizOverview } from './QuizOverview';
 import Container from 'reactstrap/lib/Container';
 import Row from 'reactstrap/lib/Row';
 import Col from 'reactstrap/lib/Col';
+import { IoIosArrowDropleft } from 'react-icons/io';
 
 interface HostGameProps {
   quiz: QuizModel;
@@ -110,6 +111,7 @@ export interface ReducerModel {
   quiz: GameDataModel;
   availableCategories: CategoryModel[];
   gameState: GameStates;
+  properlyClosed: Boolean;
 }
 
 export interface ReducerActions {
@@ -135,6 +137,7 @@ enum ReducerActionTypes {
   decideAnswer,
   prepareRound,
   roundScores,
+  leaveQuiz,
 }
 
 function wsReducer(state: ReducerModel, action: ReducerActions) {
@@ -230,12 +233,12 @@ function wsReducer(state: ReducerModel, action: ReducerActions) {
         ...state,
         quiz: {
           ...state.quiz,
-          teams: state.quiz.teams.map(team  => {
-              return {
-                ...team,
-                answer: ''
-              }
-            })
+          teams: state.quiz.teams.map((team) => {
+            return {
+              ...team,
+              answer: '',
+            };
+          }),
         },
         gameState: GameStates.selectQuestion,
       };
@@ -329,6 +332,13 @@ function wsReducer(state: ReducerModel, action: ReducerActions) {
         gameState: GameStates.stopQuiz,
       };
     }
+    case ReducerActionTypes.leaveQuiz: {
+      return {
+        ...state,
+        properlyClosed: true,
+        gameState: GameStates.disconnect,
+      };
+    }
     default:
       // A reducer must always return a valid state.
       // Alternatively you can throw an error if an invalid action is dispatched.
@@ -356,6 +366,7 @@ export const HostGame: FunctionComponent<HostGameProps> = (props) => {
       },
       availableCategories: [],
       gameState: GameStates.preparingQuiz,
+      properlyClosed: false,
     },
   );
 
@@ -412,7 +423,8 @@ export const HostGame: FunctionComponent<HostGameProps> = (props) => {
     return () => {
       unmounted = true;
       try {
-        QuizzDataHandler.disconnectGame();
+        if (!state.properlyClosed) QuizzDataHandler.disconnectGame();
+        else QuizzDataHandler.closeConnection();
       } catch (err) {
         console.log(err);
       }
@@ -464,7 +476,10 @@ export const HostGame: FunctionComponent<HostGameProps> = (props) => {
   }, [state.gameState]);
 
   const closeGame = () => {
-    console.log('Game completely ended.');
+    dispatch({
+      type: ReducerActionTypes.leaveQuiz,
+      payload: null,
+    });
   };
 
   const removeTeam = (team: TeamModel) => {
@@ -686,11 +701,16 @@ export const HostGame: FunctionComponent<HostGameProps> = (props) => {
             <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
               <Link to="/">
                 <Button color="link" block>
-                  {'< Stop hosting'}
+                  {
+                    <IoIosArrowDropleft
+                      style={{ color: '#007bff', fontSize: '1.3em' }}
+                    />
+                  }{' '}
+                  Return
                 </Button>
               </Link>
             </div>
-            
+
             <PrepareQuiz
               teams={state.quiz.teams}
               addTeam={() =>

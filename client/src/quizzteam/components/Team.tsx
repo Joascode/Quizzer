@@ -7,6 +7,7 @@ import { Link, Redirect } from 'react-router-dom';
 import Container from 'reactstrap/lib/Container';
 import Row from 'reactstrap/lib/Row';
 import Col from 'reactstrap/lib/Col';
+import { IoIosArrowDropleft } from 'react-icons/io';
 
 export interface Team {
   name: string;
@@ -86,7 +87,12 @@ export const Team: FunctionComponent<TeamProps> = (props) => {
             >
               <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
                 <Button color="link" onClick={returnToHome}>
-                  {'< Return'}
+                  {
+                    <IoIosArrowDropleft
+                      style={{ color: '#007bff', fontSize: '1.3em' }}
+                    />
+                  }{' '}
+                  Return
                 </Button>
               </div>
               <CreateTeam createTeam={createTeam} team={team} />
@@ -143,7 +149,12 @@ export const Team: FunctionComponent<TeamProps> = (props) => {
             >
               <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
                 <Button color="link" onClick={returnToHome}>
-                  {'< Return'}
+                  {
+                    <IoIosArrowDropleft
+                      style={{ color: '#007bff', fontSize: '1.3em' }}
+                    />
+                  }{' '}
+                  Return
                 </Button>
               </div>
               <CreateTeam createTeam={setTeam} team={team} />;
